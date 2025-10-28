@@ -1,0 +1,7 @@
+.*
+/faafo
+*.jpg
+*.pkl
+/frontend
+*.png
+!.gitignore

@@ -19,15 +19,18 @@ class QRReader:
         self._current_filaments = {i: "" for i in range(1, 6)}
         self._MAX_CAPTURE_TIME = 10 #[s]
     
+    
     @property
     def current_filaments(self):
         return self._current_filaments
+    
     
     def set_new_filament(self, filament: str, idx: int):
         if not (1 <= idx <= 5):
             raise ValueError(f"Filament index must be between 1 and 5 (got {idx})")
 
         self._current_filaments[idx] = filament
+            
             
     def init_cam(self) -> None:
         try:
@@ -73,6 +76,7 @@ class QRReader:
                 self._prusa_ID = self._prusa_url.split('/')[-1] #returns just ID of prusa roll from QR
                 return
         raise TimeoutError(f"QR reading timed out after {self._MAX_CAPTURE_TIME} seconds.")
+           
             
     def get_filament_name(self, roll_id: str) -> str: # input of spool ID possible if no QR provided for some reason
         url = f"https://prusament.com/spool/?spoolId={roll_id}" # prusa support for now. # TODO Look out for other vendors if they provide ID system
@@ -88,6 +92,7 @@ class QRReader:
         for barcode in decode(img):
             data: str = barcode.data.decode('utf-8')
         return data
+    
     
     def filament_picker(self):
         scanned_spool = self.get_filament_name(self._prusa_ID)
@@ -109,6 +114,7 @@ class QRReader:
         except TimeoutError as e:
             print(e)
             self.stop()
+            return
         self.filament_picker()
         self.stop()
         
@@ -117,13 +123,8 @@ class QRReader:
         if self._cam and self._cam.isOpened():
             self._cam.release()
         self.save_filaments(self.filename)
-        
-        
-            
-        
-    
-    
-        
+   
+         
 
 if __name__ == "__main__":
     qrr = QRReader(Path("filamentstore.pkl"))

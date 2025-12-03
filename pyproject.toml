@@ -1,0 +1,40 @@
+[build-system]
+requires = ["setuptools>=68", "wheel"]
+build-backend = "setuptools.build_meta"
+
+[project]
+name = "OctoPrint-ClothoPus"
+version = "0.1.0"
+description = "TODO"
+authors = [
+    {name = "Jariem", email = "you@example.com"}
+]
+readme = {file = "README.md", content-type = "text/markdown"}
+dynamic = [
+    "license"
+]
+
+requires-python = ">=3.7, <4"
+
+# any additional requirements (besides OctoPrint) should be listed here
+dependencies = []
+
+[tool.setuptools]
+include-package-data = true
+
+[tool.setuptools.packages.find]
+include = [
+    "octoprint_clothopus",
+    "octoprint_clothopus.*"
+]
+
+[project.entry-points."octoprint.plugin"]
+clothopus = "octoprint_clothopus"
+
+[project.urls]
+Homepage = "https://github.com/ricgoe/ClothoPus"
+
+[project.optional-dependencies]
+develop = [
+    "go-task-bin"
+]

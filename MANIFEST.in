@@ -1,0 +1,4 @@
+include README.md
+recursive-include octoprint_clothopus/templates *
+recursive-include octoprint_clothopus/translations *
+recursive-include octoprint_clothopus/static *

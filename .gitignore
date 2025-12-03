@@ -6,3 +6,12 @@
 *.png
 !.gitignore
 __pycache__
+*.pyc
+*.swp
+.idea
+*.iml
+build
+dist
+*.egg*
+.DS_Store
+*.zip

@@ -1,78 +1,109 @@
 # coding=utf-8
 from __future__ import absolute_import
-
-### (Don't forget to remove me)
-# This is a basic skeleton for your plugin's __init__.py. You probably want to adjust the class name of your plugin
-# as well as the plugin mixins it's subclassing from. This is really just a basic skeleton to get you started,
-# defining your plugin as a template plugin, settings and asset plugin. Feel free to add or remove mixins
-# as necessary.
-#
-# Take a look at the documentation on what other plugin mixins are available.
-
 import octoprint.plugin
+import flask
+from .hx711 import HX711
 
-class ClothopusPlugin(octoprint.plugin.SettingsPlugin,
+class ClothopusPlugin(
+    octoprint.plugin.SettingsPlugin,
     octoprint.plugin.AssetPlugin,
-    octoprint.plugin.TemplatePlugin
+    octoprint.plugin.TemplatePlugin,
+    octoprint.plugin.SimpleApiPlugin
 ):
+    
+    def __init__(self):
+        self.active_scales = {}
 
-    ##~~ SettingsPlugin mixin
+    def on_after_startup(self):
+        scales = self._settings.get(["scales"]) or {}
+        self.active_scales = { key: HX711.from_json(value) for key, value in scales.items() }
+
+        self._logger.info(f"Loaded {len(self.active_scales)} active scales.")
 
     def get_settings_defaults(self):
         return {
-            # put your plugin's default settings here
+            "max_spools": 5,
+            "auto_read": True,
+            "nfc_device": "/dev/ttyUSB0"
         }
 
-    ##~~ AssetPlugin mixin
+    def get_template_vars(self):
+        import os, yaml
+
+        data_folder = "/home/jaboll/Documents/yamls"
+        filaments = []
+
+        if os.path.isdir(data_folder):
+            for fn in os.listdir(data_folder):
+                if fn.endswith(".yaml"):
+                    file_path = os.path.join(data_folder, fn)
+                    with open(file_path, "r") as f:
+                        parsed = yaml.safe_load(f)
+                        filaments.append(parsed)
+
+        return {
+            "clothopus_rows": filaments
+        }
+
+
+    def get_template_configs(self):
+        return [
+            dict(type="tab", name="Clothopus", icon="tag"),
+            dict(type="settings", name="Clothopus Settings", custom_bindings=False)
+        ]
 
     def get_assets(self):
-        # Define your plugin's asset files to automatically include in the
-        # core UI here.
         return {
             "js": ["js/clothopus.js"],
-            "css": ["css/clothopus.css"],
-            "less": ["less/clothopus.less"]
+            "css": ["css/clothopus.css"]
         }
-
-    ##~~ Softwareupdate hook
-
-    def get_update_information(self):
-        # Define the configuration for your plugin to use with the Software Update
-        # Plugin here. See https://docs.octoprint.org/en/main/bundledplugins/softwareupdate.html
-        # for details.
-        return {
-            "clothopus": {
-                "displayName": "Clothopus Plugin",
-                "displayVersion": self._plugin_version,
-
-                # version check: github repository
-                "type": "github_release",
-                "user": "you",
-                "repo": "OctoPrint-ClothoPus",
-                "current": self._plugin_version,
-
-                # update method: pip
-                "pip": "https://github.com/you/OctoPrint-ClothoPus/archive/{target_version}.zip",
-            }
-        }
+        
+    def save_scale(self, scale_id, data):
+        scales = self._settings.get(["scales"]) or {}
+        scales[scale_id] = data
+        self._settings.set(["scales"], scales)
+        self._settings.save()
 
 
-# If you want your plugin to be registered within OctoPrint under a different name than what you defined in setup.py
-# ("OctoPrint-PluginSkeleton"), you may define that here. Same goes for the other metadata derived from setup.py that
-# can be overwritten via __plugin_xyz__ control properties. See the documentation for that.
-__plugin_name__ = "Clothopus Plugin"
+    def get_api_commands(self):
+        return dict(
+            initialize_scale=["scale_id","pins"],
+            calibrate_scale=["scale_id", "known_weight"]
+        )
+
+    def on_api_command(self, command, data: dict):
+        if command == "initialize_scale":
+            scale_id = str(data.get("scale_id"))
+            pins = data.get("pins")
+            if not pins:
+                return flask.jsonify(dict(success=False, error="Missing pins."))
+            try:
+                scale = HX711(**pins)#TODO
+            except ConnectionError:
+                return flask.jsonify(dict(success=False, error="Could not connect to scale."))
+            self.active_scales[scale_id] = scale
+            return flask.jsonify(dict(success=True))
+
+        if command == "calibrate_scale":
+            scale_id = str(data.get("scale_id"))
+            known_weight = data.get("known_weight")
+            scale = self.active_scales.get(scale_id)
+            if not scale or not scale.reachable() or not known_weight:
+                return flask.jsonify(dict(success=False, error="Could not connect to scale."))
+            result=scale.calib_scale(known_weight)
+            if not result:
+                return flask.jsonify(dict(success=False, error="Could not calibrate scale."))
+            self.save_scale(scale_id, result)
+            return flask.jsonify(result)
 
 
-# Set the Python version your plugin is compatible with below. Recommended is Python 3 only for all new plugins.
-# OctoPrint 1.4.0 - 1.7.x run under both Python 3 and the end-of-life Python 2.
-# OctoPrint 1.8.0 onwards only supports Python 3.
-__plugin_pythoncompat__ = ">=3,<4"  # Only Python 3
+__plugin_name__ = "Clothopus"
+__plugin_pythoncompat__ = ">=3,<4"
+
 
 def __plugin_load__():
     global __plugin_implementation__
     __plugin_implementation__ = ClothopusPlugin()
 
     global __plugin_hooks__
-    __plugin_hooks__ = {
-        "octoprint.plugin.softwareupdate.check_config": __plugin_implementation__.get_update_information
-    }
+    __plugin_hooks__ = {}

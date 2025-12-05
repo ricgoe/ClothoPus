@@ -1,1 +1,35 @@
-/* TODO: Have your plugin's CSS files generated to here. */
+#clothopus_tab table {
+  table-layout: fixed;
+  width: 100%;
+  border-collapse: collapse;
+}
+
+#clothopus_tab th,
+#clothopus_tab td {
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  vertical-align: middle;
+  padding: 4px 6px;
+}
+
+#clothopus_tab input.form-control {
+  width: 100%;
+  max-width: 100%;
+  display: block;
+  box-sizing: border-box;
+  height: auto;
+  padding: 4px 6px;
+  font-size: 0.9em;
+  margin: 0;
+}
+
+#clothopus_tab .btn-group .btn {
+  margin-right: 2px;
+  padding: 4px 8px;
+  line-height: 1;
+}
+
+#clothopus_tab .btn-sm i {
+  margin: 0;
+}

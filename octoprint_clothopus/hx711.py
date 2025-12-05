@@ -3,10 +3,12 @@ class HX711:
     
     @classmethod
     def from_json(cls, data: dict):
-        return cls()
+        return cls(**data.get("pins"))
     
     def __init__(self, dout, pd_sck, gain=128):
-        pass
+        self.dout = dout
+        self.pd_sck = pd_sck
+        self.gain = gain
     
     def reachable(self) -> bool:
         return True
@@ -15,5 +17,8 @@ class HX711:
         return self.json()
     
     def json(self):
-        return dict(pins=dict(dout=1, pd_sck=2), calib=dict(offset=804444.776, scale=-448.998))
+        return dict(pins=dict(dout=self.dout, pd_sck=self.pd_sck), calib=dict(offset=804444.776, scale=-448.998))
+    
+    def get_grams(self) -> Optional[float]:
+        return 1*self.dout
     

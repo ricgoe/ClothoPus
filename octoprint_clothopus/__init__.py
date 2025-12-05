@@ -8,7 +8,8 @@ class ClothopusPlugin(
     octoprint.plugin.SettingsPlugin,
     octoprint.plugin.AssetPlugin,
     octoprint.plugin.TemplatePlugin,
-    octoprint.plugin.SimpleApiPlugin
+    octoprint.plugin.SimpleApiPlugin,
+    octoprint.plugin.StartupPlugin
 ):
     
     def __init__(self):
@@ -24,7 +25,8 @@ class ClothopusPlugin(
         return {
             "max_spools": 5,
             "auto_read": True,
-            "nfc_device": "/dev/ttyUSB0"
+            "nfc_device": "/dev/ttyUSB0",
+            "scales": {}
         }
 
     def get_template_vars(self):
@@ -63,12 +65,14 @@ class ClothopusPlugin(
         scales[scale_id] = data
         self._settings.set(["scales"], scales)
         self._settings.save()
+        self._logger.info(f"Saved scale {data}")
 
 
     def get_api_commands(self):
         return dict(
             initialize_scale=["scale_id","pins"],
-            calibrate_scale=["scale_id", "known_weight"]
+            calibrate_scale=["scale_id", "known_weight"],
+            get_grams=["scale_id"]
         )
 
     def on_api_command(self, command, data: dict):
@@ -95,6 +99,13 @@ class ClothopusPlugin(
                 return flask.jsonify(dict(success=False, error="Could not calibrate scale."))
             self.save_scale(scale_id, result)
             return flask.jsonify(result)
+        
+        if command == "get_grams":
+            scale_id = str(data.get("scale_id"))
+            scale = self.active_scales.get(scale_id)
+            if not scale or not scale.reachable():
+                return flask.jsonify(dict(success=False, error="Could not connect to scale."))
+            return flask.jsonify(dict(success=True, grams=scale.get_grams()))
 
 
 __plugin_name__ = "Clothopus"

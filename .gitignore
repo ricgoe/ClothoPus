@@ -5,3 +5,4 @@
 /frontend
 *.png
 !.gitignore
+__pycache__

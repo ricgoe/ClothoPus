@@ -1,4 +1,5 @@
 # import RPi.GPIO as GPIO
+from contextlib import suppress
 import pigpio
 import time
 import warnings
@@ -6,7 +7,7 @@ import warnings
 class HX711:
     gain_mapper: dict = {128: 3, 64: 2, 32: 1}
 
-    def __init__(self, dout:int, pd_sck:int, gain:int=128, calc_offset: bool = True):
+    def __init__(self, pi:pigpio.pi, dout:int, pd_sck:int, gain:int=128, calc_offset: bool = True):
         """
         Set GPIO Mode, and pin for communication with HX711
         :param dout: Serial Data Output pin
@@ -20,7 +21,7 @@ class HX711:
 
         # Setup the gpio pin numbering system
         # GPIO.setmode(GPIO.BCM)
-        self._pi = pigpio.pi()
+        self._pi = pi
 
         # Set the pin numbers
         self._pd_sck: int = int(pd_sck)
@@ -46,7 +47,9 @@ class HX711:
         return self
 
     def __exit__(self, exc_type, exc, tb):
-        self.clean_exit()
+        with suppress(Exception):
+            self.clean_exit()
+        return False
 
     @classmethod
     def from_json(cls, data: dict):
@@ -190,13 +193,7 @@ class HX711:
     def json(self):
         return {"pins": {"dout": self._dout, "pd_sck": self._pd_sck}, "calib": {"offset": self._offset, "scale": self._scale}}
 
-    def clean_exit(self):
-        print("Cleaning up...")
-        self._pi.stop()
-        print("Bye!")
-
-
-
 if __name__ == "__main__":
-    with HX711(25, 6) as scala:
-        print(scala.get_grams())
+    polumbus = pigpio.pi()
+    scala = HX711(polumbus, 25, 6)
+    print(scala.get_grams())

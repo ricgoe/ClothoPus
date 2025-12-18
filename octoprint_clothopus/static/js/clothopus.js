@@ -1,7 +1,8 @@
 $(function() {
     function ClothopusViewModel(parameters) {
         var self = this;
-        self.totalScales = ko.observable(3);
+        self.settings = parameters[0];
+        self.scaleWeights = ko.observable({});
         self.wizard = {
             _curr_id: null,
             step: ko.observable(1),
@@ -105,6 +106,6 @@ $(function() {
         construct: ClothopusViewModel,
         name: "ClothopusViewModel",
         dependencies: ["settingsViewModel"],
-        elements: ["#clothopus_tab"]
+        elements: ["#clothopus_settings", "#clothopus_tab"]
     });
 });

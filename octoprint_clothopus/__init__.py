@@ -11,14 +11,13 @@ class ClothopusPlugin(
     octoprint.plugin.SimpleApiPlugin,
     octoprint.plugin.StartupPlugin
 ):
-    
+
     def __init__(self):
         self.active_scales = {}
 
     def on_after_startup(self):
         scales = self._settings.get(["scales"]) or {}
         self.active_scales = { key: HX711.from_json(value) for key, value in scales.items() }
-
         self._logger.info(f"Loaded {len(self.active_scales)} active scales.")
 
     def get_settings_defaults(self):
@@ -51,7 +50,7 @@ class ClothopusPlugin(
     def get_template_configs(self):
         return [
             dict(type="tab", name="Clothopus", icon="tag"),
-            dict(type="settings", name="Clothopus Settings", custom_bindings=False)
+            dict(type="settings", name="Clothopus Settings", custom_bindings=True)
         ]
 
     def get_assets(self):
@@ -59,7 +58,7 @@ class ClothopusPlugin(
             "js": ["js/clothopus.js"],
             "css": ["css/clothopus.css"]
         }
-        
+
     def save_scale(self, scale_id, data):
         scales = self._settings.get(["scales"]) or {}
         scales[scale_id] = data
@@ -99,7 +98,7 @@ class ClothopusPlugin(
                 return flask.jsonify(dict(success=False, error="Could not calibrate scale."))
             self.save_scale(scale_id, result)
             return flask.jsonify(result)
-        
+
         if command == "get_grams":
             scale_id = str(data.get("scale_id"))
             scale = self.active_scales.get(scale_id)

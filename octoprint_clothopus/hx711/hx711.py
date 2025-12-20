@@ -6,6 +6,7 @@ import warnings
 
 class HX711:
     gain_mapper: dict = {128: 3, 64: 2, 32: 1}
+    gain_re_map: dict = {v: k for k, v in gain_mapper.items()}
 
     def __init__(self, pi:pigpio.pi, dout:int, pd_sck:int, gain:int=128, calc_offset: bool = True):
         """
@@ -185,14 +186,14 @@ class HX711:
         calib: dict = data["calib"]
         if not pi:
             raise ValueError
-        scale = cls(**pins, calc_offset=False)
+        scale = cls(pi,**pins, calc_offset=False)
         scale._offset = calib.get("offset")
         scale._scale = calib.get("scale")
         return scale
 
     def json(self):
         return {
-            "pins": {"dout": self._dout, "pd_sck": self._pd_sck, "gain": self._gain},
+            "pins": {"dout": self._dout, "pd_sck": self._pd_sck, "gain": HX711.gain_re_map.get(self._gain, 128)},
             "calib": {"offset": self._offset, "scale": self._scale}
         }
 

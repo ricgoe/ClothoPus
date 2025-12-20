@@ -6,7 +6,7 @@ import io
 import types
 import typing
 
-from OPTag.fields import Fields, EncodeConfig
+from ..OPTag.fields import Fields, EncodeConfig
 
 
 class Region:

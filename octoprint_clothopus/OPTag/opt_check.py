@@ -6,8 +6,8 @@ import itertools
 import uuid
 import re
 
-from OPTag.record import Record
-from OPTag.common import default_config_file
+from ..OPTag.record import Record
+from ..OPTag.common import default_config_file
 
 
 def opt_check(rec: Record, tag_uid: bytes = None):

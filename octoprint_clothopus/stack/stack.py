@@ -1,6 +1,6 @@
-from pn5180 import Sensor
-from hx711 import HX711
-from OPTag import PrintTagHandler
+from ..pn5180 import Sensor
+from ..hx711 import HX711
+from ..OPTag import PrintTagHandler
 import pigpio
 
 class Stack:
@@ -14,22 +14,19 @@ class Stack:
         self.last_seen_tag = None
         self.tag = PrintTagHandler()
 
-    def __enter__(self):
+    def prepare(self):
         self.nfc.__enter__()
-        return self
 
-    def __exit__(self, exc_type, exc, tb):
-        self.nfc.__exit__(exc_type, exc, tb)
+    def close(self):
+        self.nfc.__exit__(None, None, None)
         self.pi.stop()
-        return False
 
     def get_weight(self, times=16) -> float:
         return self.scale.get_grams(times)
 
     def read_tag(self,) -> None | dict:
-        if not self.last_seen_tag:
-            with self.nfc.read_io():
-                self.last_seen_tag=self.nfc.read_system_information(parse=True)
+        with self.nfc.read_io():
+            self.last_seen_tag=self.nfc.read_system_information(parse=True)
         if not self.last_seen_tag:
             print("No last seen Tag")
             return
@@ -65,14 +62,19 @@ class Stack:
     @classmethod
     def from_json(cls, data: dict):
         pi = pigpio.pi()
-        return cls(name=data["name"], pi=pi)
+        stack = cls(name=data["name"], pi=pi)
+        stack.nfc = Sensor.from_json(pi, data["nfc"])
+        stack.scale = HX711.from_json(pi, data["scale"])
+        return stack
 
 if __name__ == "__main__":
     d={"data" : {}}
     pi = pigpio.pi()
-    with Stack(pi, spi_channel=0, dout=25, nss=24, busy=7, reset=8) as s:
-        s.write_tag({}, diff_only=True)
-        d=s.read_tag()
-        #bytearray(b'\xa0\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00')
-        #bytearray(b'\xbf\x00\x18d\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00')
-        print(d)
+    s=Stack(pi, spi_channel=0, dout=25, nss=24, busy=7, reset=8)
+    s.prepare()
+    # s.write_tag({}, diff_only=True)
+    d=s.read_tag()
+    #bytearray(b'\xa0\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00')
+    #bytearray(b'\xbf\x00\x18d\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00')
+    s.close()
+    print(d)

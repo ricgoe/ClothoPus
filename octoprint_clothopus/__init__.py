@@ -2,8 +2,8 @@
 from __future__ import absolute_import
 import octoprint.plugin
 import flask
-from .hx711 import HX711
 from .stack import Stack
+from .hx711 import HX711
 from .pn5180 import Sensor
 import pigpio
 
@@ -12,43 +12,29 @@ class ClothopusPlugin(
     octoprint.plugin.AssetPlugin,
     octoprint.plugin.TemplatePlugin,
     octoprint.plugin.SimpleApiPlugin,
-    octoprint.plugin.StartupPlugin
+    octoprint.plugin.StartupPlugin,
+    octoprint.plugin.ShutdownPlugin,
 ):
 
     def __init__(self):
         self.active_stacks = {}
 
     def on_after_startup(self):
-        scales = self._settings.get(["scales"]) or {}
-        self.active_stacks = { key: HX711.from_json(value) for key, value in scales.items() }
-        self._logger.info(f"Loaded {len(self.active_stacks)} active scales.")
+        stacks = self._settings.get(["stacks"]) or {}
+        self.active_stacks = { key: Stack.from_json(value) for key, value in stacks.items() }
+        for stack in self.active_stacks.values(): stack.prepare()
+        self._logger.info(f"Loaded {len(self.active_stacks)} active stacks.")
+
+    def on_shutdown(self):
+        for stack in self.active_stacks.values(): stack.close()
 
     def get_settings_defaults(self):
         return {
             "max_spools": 5,
             "auto_read": True,
             "nfc_device": "/dev/ttyUSB0",
-            "scales": {}
+            "stacks": {}
         }
-
-    def get_template_vars(self):
-        import os, yaml
-
-        data_folder = "/home/jaboll/Documents/yamls"
-        filaments = []
-
-        if os.path.isdir(data_folder):
-            for fn in os.listdir(data_folder):
-                if fn.endswith(".yaml"):
-                    file_path = os.path.join(data_folder, fn)
-                    with open(file_path, "r") as f:
-                        parsed = yaml.safe_load(f)
-                        filaments.append(parsed)
-
-        return {
-            "clothopus_rows": filaments
-        }
-
 
     def get_template_configs(self):
         return [
@@ -62,27 +48,28 @@ class ClothopusPlugin(
             "css": ["css/clothopus.css"]
         }
 
-    def save_scale(self, stack_id, data):
-        scales = self._settings.get(["scales"]) or {}
-        scales[stack_id] = data
-        self._settings.set(["scales"], scales)
+    def save_stack(self, stack_id, data):
+        stacks = self._settings.get(["stacks"]) or {}
+        stacks[stack_id] = data
+        self._settings.set(["stacks"], stacks)
         self._settings.save()
         self._logger.info(f"Saved scale {data}")
 
 
     def get_api_commands(self):
         return dict(
-            initialize_scale=["stack_id","pins"],
+            initialize_scale=["stack_id", "name", "pins"],
             calibrate_scale=["stack_id", "known_weight"],
             initialize_nfc=["stack_id", "nfc"],
-            get_grams=["stack_id"]
+            get_grams=["stack_id"],
+            fetch_filaments=[]
         )
 
     def on_api_command(self, command, data: dict):
         if command == "initialize_scale":
             stack_id = str(data.get("stack_id"))
             pins = data.get("pins")
-            stack = Stack(pi=pigpio.pi(), name="")
+            stack = Stack(pi=pigpio.pi(), name=data.get("name"))
             if not pins:
                 return flask.jsonify(dict(success=False, error="Missing pins."))
             try:
@@ -91,13 +78,14 @@ class ClothopusPlugin(
                 return flask.jsonify(dict(success=False, error="Could not connect to scale."))
             stack.scale = scale
             self.active_stacks[stack_id] = stack
+            print(self.active_stacks)
             return flask.jsonify(dict(success=True))
 
         if command == "calibrate_scale":
             stack_id = str(data.get("stack_id"))
             known_weight = data.get("known_weight")
             stack: Stack = self.active_stacks.get(stack_id)
-            if not stack or not stack.scale or not stack.scale.reachable() or not known_weight:
+            if not stack or not stack.scale or not known_weight:
                 return flask.jsonify(dict(success=False, error="Could not connect to scale."))
             result=stack.scale.calib_scale(known_weight)
             if not result:
@@ -112,10 +100,15 @@ class ClothopusPlugin(
             if not stack or not nfc:
                 return flask.jsonify(dict(success=False, error="Missing nfc."))
             sensor = Sensor.from_json(stack.pi, nfc)
-            if not sensor._read_tx_config():
-                return flask.jsonify(dict(success=False, error="Could not connect to scale."))
+            if not sensor.reachable():
+                return flask.jsonify(dict(success=False, error="Could not connect to sensor."))
             stack.nfc = sensor
+            self.save_stack(stack_id, stack.json())
             return flask.jsonify(dict(success=True))
+
+        if command == "fetch_filaments":
+            filaments = [stack.read_tag() for stack in self.active_stacks.values()]
+            return {"rows": filaments}
 
         if command == "get_grams":
             stack_id = str(data.get("stack_id"))
@@ -123,6 +116,23 @@ class ClothopusPlugin(
             if not scale or not scale.reachable():
                 return flask.jsonify(dict(success=False, error="Could not connect to scale."))
             return flask.jsonify(dict(success=True, grams=scale.get_grams()))
+
+    def is_api_protected(self):
+        return True
+
+    def _load_stacks_from_settings(self):
+        stacks_cfg = self._settings.get(["stacks"]) or {}
+        for stack in getattr(self, "active_stacks", {}).values():
+            try:
+                stack.close()
+            except Exception:
+                self._logger.exception("Failed to close stack")
+        self.active_stacks = {}
+        for key, cfg in stacks_cfg.items():
+            stack = Stack.from_json(cfg)
+            stack.prepare()
+            self.active_stacks[key] = stack
+
 
 
 __plugin_name__ = "Clothopus"

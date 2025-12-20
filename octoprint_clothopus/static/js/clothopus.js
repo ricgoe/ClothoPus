@@ -2,20 +2,21 @@ $(function() {
     function ClothopusViewModel(parameters) {
         var self = this;
         self.settings = parameters[0];
-        self.scaleWeights = ko.observable({});
         self.wizard = {
             _curr_id: null,
-            step: ko.observable(1),
 
-            pins: ko.observable({ dout: "", pd_sck: "" }),
+            step: ko.observable(1),
+            name: ko.observable(""),
+            scale_pins: ko.observable({ dout: "", pd_sck: "" }),
+            nfc: ko.observable({ nss: "", busy: "", reset: "", baud: "115200", spi_channel: "0" }),
             knownWeight: ko.observable(""),
             result: ko.observable({}),
 
             initializeScale: function() {
                 const ID = Date.now().toString();
                 OctoPrint.simpleApiCommand("clothopus", "initialize_scale", {
-                    scale_id: ID,
-                    pins: self.wizard.pins()
+                    stack_id: ID,
+                    pins: self.wizard.scale_pins()
                 }).done(function(resp) {
                     if (resp.success) {
                         self.wizard._curr_id = ID;
@@ -32,7 +33,7 @@ $(function() {
 
             calibrateScale: function() {
                 OctoPrint.simpleApiCommand("clothopus", "calibrate_scale", {
-                    scale_id: self.wizard._curr_id,
+                    stack_id: self.wizard._curr_id,
                     known_weight: self.wizard.knownWeight()
                 }).done(function(resp) {
                     if (resp.success !== false) {
@@ -48,9 +49,27 @@ $(function() {
                 });
             },
 
-            resetForNewScale: function() {
+            initializeNFC: function() {
+                OctoPrint.simpleApiCommand("clothopus", "initialize_nfc", {
+                    stack_id: self.wizard._curr_id,
+                    nfc: self.wizard.nfc()
+                }).done(function(resp) {
+                    if (resp.success) {
+                        self.wizard._curr_id = ID;
+                        self.wizard.step(4);
+                    } else {
+                        new PNotify({
+                            title: "Scale Error",
+                            text: resp.error || "Unknown error",
+                            type: "error"
+                        });
+                    }
+                });
+            },
+
+            resetForNewStack: function() {
                 self.wizard.step(1);
-                self.wizard.pins({ dout: "", pd_sck: "" });
+                self.wizard.scale_pins({ dout: "", pd_sck: "" });
                 self.wizard.knownWeight("");
                 self.wizard.result({});
                 self.wizard._curr_id = null;
@@ -62,9 +81,10 @@ $(function() {
 
             primaryText: ko.pureComputed(function() {
                 switch (self.wizard.step()) {
-                    case 1: return "Next Step";
-                    case 2: return "Finish";
-                    case 3: return "Add Scale";
+                    case 1: return "Initialize Scale";
+                    case 2: return "Next Step";
+                    case 3: return "Initialize NFC Reader";
+                    case 4: return "Add Stack";
                 }
             }),
 
@@ -77,17 +97,20 @@ $(function() {
                         self.wizard.calibrateScale();
                         break;
                     case 3:
-                        self.wizard.resetForNewScale();
+                        self.wizard.initializeNFC();
+                        break;
+                    case 4:
+                        self.wizard.resetForNewStack();
                         break;
                 }
             },
 
             secondaryText: ko.pureComputed(function() {
-                return (self.wizard.step() < 3) ? "Cancel" : "Finish";
+                return (self.wizard.step() < 4) ? "Cancel" : "Finish";
             }),
 
             secondaryAction: function() {
-                if (self.wizard.step() < 3) {
+                if (self.wizard.step() < 4) {
                     self.wizard.closeWizard();
                 } else {
                     self.wizard.closeWizard();
@@ -97,7 +120,7 @@ $(function() {
 
 
         self.startWizard = function() {
-            self.wizard.resetForNewScale();
+            self.wizard.resetForNewStack();
             $("#clothopus_wizard").modal("show");
         };
     }

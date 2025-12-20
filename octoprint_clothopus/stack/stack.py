@@ -1,16 +1,16 @@
-from pn5180 import ISO15693Sensor
+from pn5180 import Sensor
 from hx711 import HX711
 from OPTag import PrintTagHandler
 import pigpio
 
 class Stack:
     def __init__(
-            self, spi_channel:int, dout:int, nss:int, busy:int, reset:int, pd_sck:int=6, gain:int=128,
-            calc_scale_offset:bool=False, baud:int = 115200, verbose: bool = False
+            self, name:str, pi:pigpio.pi
         ):
-        self._pi = pigpio.pi()
-        self.scale = HX711(self._pi, dout, pd_sck, gain, calc_offset=calc_scale_offset)
-        self.nfc = ISO15693Sensor(self._pi, spi_channel, nss, busy, reset, baud, verbose)
+        self.pi = pi
+        self.name = name
+        self.scale: HX711|None = None
+        self.nfc: Sensor|None = None
         self.last_seen_tag = None
         self.tag = PrintTagHandler()
 
@@ -20,7 +20,7 @@ class Stack:
 
     def __exit__(self, exc_type, exc, tb):
         self.nfc.__exit__(exc_type, exc, tb)
-        self._pi.stop()
+        self.pi.stop()
         return False
 
     def get_weight(self, times=16) -> float:
@@ -54,9 +54,23 @@ class Stack:
         with self.nfc.read_io():
             self.nfc.write_blocks(patched, self.last_seen_tag["block_size"], self.last_seen_tag["uid_lsb"], retries_per_block, diff_only)
 
+    def json(self):
+        return {
+            "name": self.name,
+            "scale": self.scale.json(),
+            "nfc": self.nfc.json(),
+            "last_seen_tag": self.last_seen_tag
+        }
+
+    @classmethod
+    def from_json(cls, data: dict):
+        pi = pigpio.pi()
+        return cls(name=data["name"], pi=pi)
+
 if __name__ == "__main__":
     d={"data" : {}}
-    with Stack(spi_channel=0, dout=25, nss=24, busy=7, reset=8) as s:
+    pi = pigpio.pi()
+    with Stack(pi, spi_channel=0, dout=25, nss=24, busy=7, reset=8) as s:
         s.write_tag({}, diff_only=True)
         d=s.read_tag()
         #bytearray(b'\xa0\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00')

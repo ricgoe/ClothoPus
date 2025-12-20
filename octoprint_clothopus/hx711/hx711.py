@@ -51,17 +51,6 @@ class HX711:
             self.clean_exit()
         return False
 
-    @classmethod
-    def from_json(cls, data: dict):
-        pins: dict = data.get("pins")
-        calib: dict = data.get("calib")
-        if not pins or not calib:
-            raise ValueError
-        scale = cls(**pins, calc_offset=False)
-        scale._offset = calib.get("offset")
-        scale._scale = calib.get("scale")
-        return scale
-
     def set_gain(self, gain=128):
         if gain not in HX711.gain_mapper:
             warnings.warn(
@@ -190,8 +179,22 @@ class HX711:
         self._scale = scale
         return self.json()
 
+    @classmethod
+    def from_json(cls, pi:pigpio.pi, data: dict):
+        pins: dict = data["pins"]
+        calib: dict = data["calib"]
+        if not pi:
+            raise ValueError
+        scale = cls(**pins, calc_offset=False)
+        scale._offset = calib.get("offset")
+        scale._scale = calib.get("scale")
+        return scale
+
     def json(self):
-        return {"pins": {"dout": self._dout, "pd_sck": self._pd_sck}, "calib": {"offset": self._offset, "scale": self._scale}}
+        return {
+            "pins": {"dout": self._dout, "pd_sck": self._pd_sck, "gain": self._gain},
+            "calib": {"offset": self._offset, "scale": self._scale}
+        }
 
 if __name__ == "__main__":
     polumbus = pigpio.pi()

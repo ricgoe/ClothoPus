@@ -8,30 +8,28 @@ from typing import Callable, Literal, Optional
 from pn5180.definitions import *
 
 
-class Sensor(ABC):
-    """
-    Abstract class from which all other sensor protocol classes are subclassed
-    """
-
+class Sensor:
     def __init__(
         self,
         pi: pigpio.pi,
         spi_channel: int = 0,
-        nss_pin : int = 8,
-        busy_pin: int = 25,
-        reset_pin: int = 7,
+        nss : int = 8,
+        busy: int = 25,
+        reset: int = 7,
         baud: int = 115200,
         verbose: bool = False,
     ) -> None:
         self._verbose: bool = verbose
         self._pi = pi
+        self._spi_channel = spi_channel
+        self._baud = baud
         self._spi = self._pi.spi_open(spi_channel, baud,32)
-        self._nss_pin = nss_pin
+        self._nss_pin = nss
         self._pi.set_mode(self._nss_pin, pigpio.OUTPUT)
         self._pi.write(self._nss_pin, 1)
-        self._busy_pin = busy_pin
-        self._pi.set_mode(busy_pin, pigpio.INPUT)
-        self._reset_pin = reset_pin
+        self._busy_pin = busy
+        self._pi.set_mode(busy, pigpio.INPUT)
+        self._reset_pin = reset
         self._pi.set_mode(self._reset_pin, pigpio.OUTPUT)
         self._pi.write(self._reset_pin, 0)
         sleep(1)
@@ -39,7 +37,6 @@ class Sensor(ABC):
         sleep(1)
 
     def _wait_ready(self, timeout=4) -> None:
-        """Waits for busy pin to be low"""
         self._log("Checking if chip is ready")
         if not self._pi.read(self._busy_pin):
             self._log("Chip is ready; continuing")
@@ -61,8 +58,6 @@ class Sensor(ABC):
         self._log(f"Reading {length} bytes")
         self._pi.write(self._nss_pin, 0)
         bytes_read, data = self._pi.spi_read(self._spi, length)
-        # while self._pi.read(self._busy_pin) < 1:
-        #     sleep(0.005)
         self._pi.write(self._nss_pin, 1)
         if bytes_read != length:
             raise RuntimeError(
@@ -74,8 +69,6 @@ class Sensor(ABC):
         self._wait_ready()
         self._pi.write(self._nss_pin, 0)
         self._pi.spi_write(self._spi, bytes)
-        # while self._pi.read(self._busy_pin) < 1:
-        #     sleep(0.005)
         self._pi.write(self._nss_pin, 1)
         self._log(f"Sent frame: {bytes}")
         self._wait_ready()
@@ -96,12 +89,6 @@ class Sensor(ABC):
 
     def _read_irq(self) -> None:
         self._write([CMD_READ_REGISTER, REG_IRQ_CLEAR])
-
-
-class ISO15693Sensor(Sensor):
-    """
-    Driver to easily read/write ISO15693 tags with the PN5180
-    """
 
     def __enter__(self):
         self._prepare_sensor()
@@ -218,8 +205,6 @@ class ISO15693Sensor(Sensor):
         self._clear_interrupt_register()
 
     def _read_buffer(self):
-        # sleep(0.2)
-        # sleep(0.1)
         response_bytes = self._get_card_response_bytes()
         if not response_bytes: return None
         self._read_data_cmd()
@@ -259,7 +244,6 @@ class ISO15693Sensor(Sensor):
             for j in range(retries):
                 if chunk and chunk[0] == 0:
                     break
-                sleep(0.02)
                 self._read_multiple_blocks(current, n, address)
                 chunk=self._read_buffer()
             else: raise TimeoutError(f"Could not read blocks from {current} to {current+n}")
@@ -277,17 +261,12 @@ class ISO15693Sensor(Sensor):
             blocks = {i: blocks[i] for i in old if blocks[i]!=old[i]}
         if n_blocks < 0 or n_blocks > 255: raise ValueError(f"{n_blocks=} but must be between 0 and 255")
         errors=[]
-        print(f"{blocks=}")
         for i, block in blocks.items():
             with self.read_io(): #TODO why is IRQ not cleared. Read IRQ_STATUS
-                print(f"self._write_single_block({i}, {block}, {address})")
                 self._write_single_block(i, block, address)
                 status = self._read_buffer()
                 for j in range(retries):
                     with self.read_io():
-                        print(i, f"{status=}")
-                        if not status:
-                            print(f"{self._get_card_response()=}")
                         if status:
                             break
                         self._write_single_block(i, block, address)
@@ -303,13 +282,9 @@ class ISO15693Sensor(Sensor):
         if len(response) < 2:
             raise ValueError("response too short to be valid system information")
         result: dict[str, object] = {}
-        # byte 0: flags
-        result["flags"] = response[0]
-        # byte 1: info flags
         info_flags = response[1]
         result["infoflags"] = info_flags
         index = 2  # pointer to next field
-        # uid (8 bytes, LSB first)
         if info_flags & 0x01:
             uid = response[index:index+8]
             if len(uid) != 8:
@@ -317,15 +292,12 @@ class ISO15693Sensor(Sensor):
             result["uid_lsb"] = uid
             result["uid"] = uid[::-1]  # msb-first
             index += 8
-        # dsfid
         if info_flags & 0x02:
             result["dsfid"] = response[index]
             index += 1
-        # afi
         if info_flags & 0x04:
             result["afi"] = response[index]
             index += 1
-        # memory size (2 bytes)
         if info_flags & 0x08:
             if len(response) < index + 2:
                 raise ValueError("memory size field incomplete")
@@ -334,7 +306,6 @@ class ISO15693Sensor(Sensor):
             result["num_blocks"] = num_blocks_minus1 + 1
             result["block_size"] = block_size_minus1 + 1
             index += 2
-        # ic reference
         if info_flags & 0x10:
             if len(response) <= index:
                 raise ValueError("ic reference field missing")
@@ -350,3 +321,18 @@ class ISO15693Sensor(Sensor):
             yield self
         finally:
             self._end_read()
+
+    def json(self):
+        return {
+            "busy": self._busy_pin,
+            "nss": self._nss_pin,
+            "reset": self._reset_pin,
+            "spi_channel": self._spi_channel,
+            "baud": self._baud
+        }
+
+    @classmethod
+    def from_json(cls, pi:pigpio.pi, data: dict):
+        if not pi:
+            raise ValueError
+        return cls(pi, **data)

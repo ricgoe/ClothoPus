@@ -6,9 +6,16 @@ $(function() {
             _curr_id: null,
 
             step: ko.observable(1),
-            name: ko.observable(""),
-            scale_pins: ko.observable({ dout: "", pd_sck: "" }),
-            nfc: ko.observable({ nss: "", busy: "", reset: "", baud: "115200", spi_channel: "0" }),
+            name: ko.observable("N"),
+            scale: { dout: ko.observable(""), pd_sck: ko.observable(""), gain: ko.observable(128) },
+            nfc: {
+                nss: ko.observable(""),
+                busy: ko.observable(""),
+                reset: ko.observable(""),
+                baud: ko.observable(115200),
+                spi_channel: ko.observable(0)
+            },
+
             knownWeight: ko.observable(""),
             result: ko.observable({}),
 
@@ -16,7 +23,8 @@ $(function() {
                 const ID = Date.now().toString();
                 OctoPrint.simpleApiCommand("clothopus", "initialize_scale", {
                     stack_id: ID,
-                    pins: self.wizard.scale_pins()
+                    name: self.wizard.name(),
+                    pins: ko.toJS(self.wizard.scale)
                 }).done(function(resp) {
                     if (resp.success) {
                         self.wizard._curr_id = ID;
@@ -52,11 +60,10 @@ $(function() {
             initializeNFC: function() {
                 OctoPrint.simpleApiCommand("clothopus", "initialize_nfc", {
                     stack_id: self.wizard._curr_id,
-                    nfc: self.wizard.nfc()
+                    nfc: ko.toJS(self.wizard.nfc)
                 }).done(function(resp) {
                     if (resp.success) {
-                        self.wizard._curr_id = ID;
-                        self.wizard.step(4);
+                        self.wizard.step(5);
                     } else {
                         new PNotify({
                             title: "Scale Error",
@@ -69,7 +76,15 @@ $(function() {
 
             resetForNewStack: function() {
                 self.wizard.step(1);
-                self.wizard.scale_pins({ dout: "", pd_sck: "" });
+                self.wizard.scale = { dout: ko.observable(""), pd_sck: ko.observable(""), gain: ko.observable(128) };
+                self.wizard.nfc = {
+                    nss: ko.observable(""),
+                    busy: ko.observable(""),
+                    reset: ko.observable(""),
+                    baud: ko.observable(115200),
+                    spi_channel: ko.observable(0)
+                };
+                self.wizard.name("");
                 self.wizard.knownWeight("");
                 self.wizard.result({});
                 self.wizard._curr_id = null;
@@ -83,8 +98,9 @@ $(function() {
                 switch (self.wizard.step()) {
                     case 1: return "Initialize Scale";
                     case 2: return "Next Step";
-                    case 3: return "Initialize NFC Reader";
-                    case 4: return "Add Stack";
+                    case 3: return "Next Step";
+                    case 4: return "Initialize NFC Reader";
+                    case 5: return "Add another Stack";
                 }
             }),
 
@@ -97,20 +113,23 @@ $(function() {
                         self.wizard.calibrateScale();
                         break;
                     case 3:
-                        self.wizard.initializeNFC();
+                        self.wizard.step(4);
                         break;
                     case 4:
+                        self.wizard.initializeNFC();
+                        break;
+                    case 5:
                         self.wizard.resetForNewStack();
                         break;
                 }
             },
 
             secondaryText: ko.pureComputed(function() {
-                return (self.wizard.step() < 4) ? "Cancel" : "Finish";
+                return (self.wizard.step() < 5) ? "Cancel" : "Finish";
             }),
 
             secondaryAction: function() {
-                if (self.wizard.step() < 4) {
+                if (self.wizard.step() < 5) {
                     self.wizard.closeWizard();
                 } else {
                     self.wizard.closeWizard();
@@ -123,12 +142,28 @@ $(function() {
             self.wizard.resetForNewStack();
             $("#clothopus_wizard").modal("show");
         };
+        self.filamentRows = ko.observableArray([]);
+        self.fetchFilaments = function () {
+            OctoPrint.simpleApiCommand(
+                "clothopus",
+                "fetch_filaments"
+            ).done(function (resp) {
+                self.filamentRows(resp.rows || []);
+            });
+        };
+        self.onTabChange = function (current, previous) {
+            if (current === "#tab_plugin_clothopus") {
+                self.fetchFilaments();
+            }
+        };
+
+
     }
 
     OCTOPRINT_VIEWMODELS.push({
         construct: ClothopusViewModel,
         name: "ClothopusViewModel",
         dependencies: ["settingsViewModel"],
-        elements: ["#clothopus_settings", "#clothopus_tab"]
+        elements: ["#settings_plugin_clothopus", "#tab_plugin_clothopus"]
     });
 });

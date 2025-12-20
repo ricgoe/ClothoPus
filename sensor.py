@@ -5,7 +5,7 @@ from time import sleep
 from math import ceil
 from typing import Literal, Optional
 
-from ..pn5180.definitions import *
+from definitions import *
 
 
 class Sensor:

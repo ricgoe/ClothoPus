@@ -1,11 +1,10 @@
-#clothopus_tab table {
+#tab_plugin_clothopus table {
   table-layout: fixed;
   width: 100%;
-  border-collapse: collapse;
 }
 
-#clothopus_tab th,
-#clothopus_tab td {
+#tab_plugin_clothopus th,
+#tab_plugin_clothopus td {
   white-space: nowrap;
   overflow: hidden;
   text-overflow: ellipsis;
@@ -13,7 +12,7 @@
   padding: 4px 6px;
 }
 
-#clothopus_tab input.form-control {
+#tab_plugin_clothopus input.form-control {
   width: 100%;
   max-width: 100%;
   display: block;
@@ -24,12 +23,12 @@
   margin: 0;
 }
 
-#clothopus_tab .btn-group .btn {
+#tab_plugin_clothopus .btn-group .btn {
   margin-right: 2px;
   padding: 4px 8px;
   line-height: 1;
 }
 
-#clothopus_tab .btn-sm i {
+#tab_plugin_clothopus .btn-sm i {
   margin: 0;
 }

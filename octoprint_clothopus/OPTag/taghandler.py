@@ -1,12 +1,12 @@
-from OPTag.record import Record
-from OPTag.common import default_config_file
-from OPTag.opt_check import opt_check
+from ..OPTag.record import Record
+from ..OPTag.common import default_config_file
+from ..OPTag.opt_check import opt_check
 import ndef
 import cbor2
 import os
 import types
 import yaml
-from OPTag.fields import Fields, EncodeConfig
+from ..OPTag.fields import Fields, EncodeConfig
 
 
 class PrintTagHandler:

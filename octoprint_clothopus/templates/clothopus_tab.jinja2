@@ -1,65 +1,72 @@
-<div id="clothopus_tab" class="section">
-  <h3>Clothopus Filament Manager</h3>
+<h3>Clothopus Filament Manager</h3>
 
-  <table class="table table-striped table-bordered" id="clothopus_filament_table">
-    <thead class="thead-dark">
-      <tr>
-      <th>#</th>
-      <th>Name</th>
-      <th>Kind</th>
-      <th>Manufacturer</th>
-      <th>Color</th>
-      <th>Actions</th>
-      </tr>
-    </thead>
+<table class="table table-striped table-bordered" id="clothopus_filament_table">
+  <thead class="thead-dark">
+    <tr>
+    <th style="width: 5%;"></th>
+    <th style="width: 5%;">#</th>
+    <th style="width: 30%;">Name</th>
+    <th style="width: 10%;">Kind</th>
+    <th style="width: 30%;">Manufacturer</th>
+    <th style="width: 20%;">Actions</th>
+    </tr>
+  </thead>
 
-    <tbody>
-      {% set rows = plugin_clothopus_clothopus_rows %}
+  <tbody data-bind="if: filamentRows().length === 0">
+    <tr>
+      <td colspan="6" class="text-muted">No filaments found.</td>
+    </tr>
+  </tbody>
 
-      {% for row in rows %}
-      {% set main = row.data.main if row.data is defined and row.data.main is defined else {} %}
-      {% set primary_color = main.primary_color if main.primary_color is defined else {} %}
+  <tbody data-bind="foreach: filamentRows">
+    <tr>
+      <td data-bind="
+        style: {
+          backgroundColor: data?.main?.primary_color?.hex
+            ? '#' + data.main.primary_color.hex
+            : ''
+        }
+      "></td>
 
-      <tr>
-        <td>{{ loop.index }}</td>
+      <td data-bind="text: $index() + 1"></td>
 
-        <td>
-        <span class="filament-name">{{ main.material_name}}</span>
-        </td>
+      <td>
+        <span class="filament-name"
+          data-bind="text: data?.main?.material_name || ''"></span>
+      </td>
 
-        <td>
-        <span class="filament-kind">{{ main.material_type}}</span>
-        </td>
+      <td>
+        <span class="filament-kind"
+          data-bind="text: data?.main?.material_type || ''"></span>
+      </td>
 
-        <td>
-        <span class="filament-manufacturer">{{ main.brand_name}}</span>
-        </td>
+      <td>
+        <span class="filament-manufacturer"
+            data-bind="text: data?.main?.brand_name || ''"></span>
+      </td>
 
-        <td>
-        <span class="filament-color">{{ primary_color.hex}}</span>
-        </td>
-
-        <td>
+      <td>
         <div class="btn-group" role="group">
-          <button type="button" class="btn btn-success btn-sm write-btn">
-          <i class="fas fa-pen"></i>
+          <button type="button"
+              class="btn btn-success btn-sm write-btn"
+              data-bind="click: $parent.writeFilament">
+            <i class="fas fa-pen"></i>
           </button>
-          <button type="button" class="btn btn-secondary btn-sm read-btn">
-          <i class="fas fa-book"></i>
+
+          <button type="button"
+              class="btn btn-secondary btn-sm read-btn"
+              data-bind="click: $parent.readFilament">
+            <i class="fas fa-book"></i>
           </button>
-          <button type="button" class="btn btn-danger btn-sm delete-btn">
-          <i class="fas fa-trash"></i>
+
+          <button type="button"
+              class="btn btn-danger btn-sm delete-btn"
+              data-bind="click: $parent.deleteFilament">
+            <i class="fas fa-trash"></i>
           </button>
         </div>
-        </td>
-      </tr>
-      {% endfor %}
+      </td>
+    </tr>
+  </tbody>
 
-      {% if rows|length == 0 %}
-      <tr>
-        <td colspan="6" class="text-muted">No filaments found.</td>
-      </tr>
-      {% endif %}
-    </tbody>
-  </table>
-</div>
+</table>

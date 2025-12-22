@@ -20,13 +20,20 @@ class ClothopusPlugin(
         self.active_stacks = {}
 
     def on_after_startup(self):
-        stacks = self._settings.get(["stacks"]) or {}
-        self.active_stacks = { key: Stack.from_json(value) for key, value in stacks.items() }
-        for stack in self.active_stacks.values(): stack.prepare()
+
         self._logger.info(f"Loaded {len(self.active_stacks)} active stacks.")
 
     def on_shutdown(self):
-        for stack in self.active_stacks.values(): stack.close()
+        for stack in self.active_stacks.values():
+            try:
+                stack.close()
+            except Exception as e:
+                self._logger.info(e)
+
+    def on_settings_save(self, data):
+        super().on_settings_save(data)
+        self._load_stacks_from_settings()
+
 
     def get_settings_defaults(self):
         return {

@@ -2,6 +2,7 @@ $(function() {
     function ClothopusViewModel(parameters) {
         var self = this;
         self.settings = parameters[0];
+        self.stacksArray = ko.observableArray();
         self.wizard = {
             _curr_id: null,
 
@@ -156,7 +157,16 @@ $(function() {
                 self.fetchFilaments();
             }
         };
-
+        self.onAfterBinding = function () {
+            const stacks = self.settings.settings.plugins.clothopus.stacks || {};
+            const rows = Object.keys(stacks).map(function (id) {
+                return {
+                    id: id,
+                    data: stacks[id]
+                };
+            });
+            self.stacksArray(rows);
+        };
 
     }
 

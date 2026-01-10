@@ -77,11 +77,27 @@
 )
 #pagebreak()
 
-=	Einleitung
+= Einleitung
 == Motivation
-== Zielsetzung
-== Vorgehensweise
+Im Bereich der privaten Nutzung von 3D-Druck Techniken, spezifisch Fused Deposition Modelling (FDM) und Fused Layer Modelling (FLM) ist das Filament als Fertigungsmaterial ein Kernbestandteil.  
+Ein häufiges Problem, das sowohl in der persönlichen Arbeit als auch in der FLM/FDM-Community identifiziert wurde, ist die regelmäßige und umständliche Überprüfung des Filamentbestandes.  
+Diese umfasst im Mindesten das Überprüfen des aktuell eingebauten Filemants, das Demontieren der Filamentrolle aus dem Drucker selbst, einer anschließenden Gewichtsmessung inklusive Subtraktionsrechnung des Eigenwichts der Filemantrolle selbst und schließlich erneutem Einsetzen des Filaments im Vorfeld des eigentlichen Fertigungsprozesses. 
+Besonders bei der Arbeit mit mehreren Filamenten innerhalb eines Druckvorgangs, wo dieser Vorgang im Notfall für jedes Filemant durchgeführt werden muss, kann so ein großer Zeitaufwand entstehen.  
+In Zeiten, in denen verfügbare Zeit und ihrer effizienten Nutzung indirekt stets an Wert zunimmt, ist die Entwicklung einer zeitsparenderen Lösung unabdingbar.
+Durch die kontiuierlich sinkenden Preise für Druckgeräte wächst die Anzahl der Nutzer mehr und mehr.
 
+Um dieses Problem zu entschärfen präsentieren wir _Clothopus_, ein smartes System zur automatischen Registrierung und Gewichtsmessung von bis zu fünf Filamenten zeitgleich. 
+_Clothopus_ verlegt den Fokus für den Nutzer zurück auf die Kernaufgabe des Designens und sorgt so für einen angenehmeren Workflow.
+
+== Zielsetzung
+_Clothopus_ soll den Nutzern als ein inuitives und schlankes System zur Filemantverwaltung und -übersicht dienen, dass die zeitlichen Anfordungen an nebensächlich anfallende Aufgaben reduziert.  
+Präziser umfasst dies das automatisierte Identifizieren und Vermessen der in den Drucker eingesetzten Filamente.  
+Über eine entsprechende Software können die Nutzer die aktuell eingesetzten Filamente samt Gewichtsangabe einsehen.
+Die Handwarekomponente des Produkt setzt sich zusammen aus fünf identischen Filamentstationen sowie einer zentralen Box mit verbauten Komponenten zur Evaluation der Messdaten.
+Zusätzlich zu externen RFID-Tags ist _Clothopus_ explizit mit neuen Filemantprodukten der Marke Prusa Research, die seit Kurzem
+
+== Vorgehensweise
+Der Einsatz von Techniken aus dem Bereich der Radio-Frequency-Identification sowie unaufällig eingesetzen Wägezellen bieten eine elegante Lösung zur Filamentüberwachung.
 
 #pagebreak()
 = Projektmanagement
@@ -101,8 +117,13 @@
 == Organisation und Management
 == Menschen und Kultur
 == Business und Ökosystem
-Beschreibung des Business Cases inkl. Abschätzung von Kosten in der Serie, Preisen, Margen. Ideen zur Finanzierung eines Ramp-Ups.  
-== 3.6 Service und Unterstützung
+Beschreibung des Business Cases inkl. Abschätzung von Kosten in der Serie, Preisen, Margen. Ideen zur Finanzierung eines Ramp-Ups. 
+
+=> Die Nutzungs des Systems für Endverbraucher setzt zunächst den Erwerb der benötigten Hardwarekomponenten voraus. 
+Zusammen mit dem physischen Produkt stehen zunächst Basisfunktionen zur Verfügung. 
+Über ein Abonnement-Modell oder den einmalige Zahlung können in jeder Produktiteration erweiterte Features genutzt werden.
+
+== Service und Unterstützung
 
 #pagebreak()
 = Fazit und Ausblick

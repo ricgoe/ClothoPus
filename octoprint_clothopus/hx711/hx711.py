@@ -3,10 +3,10 @@ from contextlib import suppress
 import pigpio
 import time
 import warnings
+import threading
 
 class HX711:
     gain_mapper: dict = {128: 3, 64: 2, 32: 1}
-    gain_re_map: dict = {v: k for k, v in gain_mapper.items()}
 
     def __init__(self, pi:pigpio.pi, dout:int, pd_sck:int, gain:int=128, calc_offset: bool = True):
         """
@@ -38,8 +38,7 @@ class HX711:
         self.power_up()
         self.set_gain(gain)
 
-        if not self.reachable():
-            raise ConnectionError(f"Scale is not reachable on pins: {dout=}, {pd_sck=}")
+        self.reachable()
 
         if calc_offset:
             self.calib_offset()
@@ -55,11 +54,11 @@ class HX711:
     def set_gain(self, gain=128):
         if gain not in HX711.gain_mapper:
             warnings.warn(
-                f"Invalid gain '{gain}', falling back to default (3). "
+                f"Invalid gain '{gain}', falling back to default (128). "
                 f"Valid values: {list(HX711.gain_mapper.keys())}"
             )
 
-        self._gain = HX711.gain_mapper.get(gain, 3)
+        self._gain = gain
         self.power_up()
         self.read()
 
@@ -72,10 +71,7 @@ class HX711:
         """
 
         # Control if the chip is ready
-        while not (self._pi.read(self._dout) == 0):
-            # Uncommenting the print below results in noisy output
-            # print("No input from HX711.")
-            pass
+        self.reachable()
 
         # Original C source code ported to Python as described in datasheet
         # https://cdn.sparkfun.com/datasheets/Sensors/ForceFlex/hx711_english.pdf
@@ -87,20 +83,17 @@ class HX711:
         count = 0
 
         for i in range(24):
-            self._pi.write(self._pd_sck, 1)
+            self._pi.gpio_trigger(self._pd_sck, 2, 1)
             count = count << 1
-            self._pi.write(self._pd_sck, 0)
-            if(self._pi.read(self._dout)):
+            if self._pi.read(self._dout):
                 count += 1
 
-        self._pi.write(self._pd_sck, 1)
+        self._pi.gpio_trigger(self._pd_sck, 2, 1) #TODO
         count = count ^ 0x800000
-        self._pi.write(self._pd_sck, 0)
 
         # set channel and gain factor for next reading
-        for i in range(self._gain):
-            self._pi.write(self._pd_sck, 1)
-            self._pi.write(self._pd_sck, 0)
+        for _ in range(HX711.gain_mapper.get(self._gain, 1)):
+            self._pi.gpio_trigger(self._pd_sck, 2, 1)
 
         return count
 
@@ -109,7 +102,6 @@ class HX711:
         Calculate average value from
         :param times: measure x amount of time to get average
         """
-        self.power_cycle()
         sum = 0
         for i in range(times):
             sum += self.read()
@@ -122,8 +114,12 @@ class HX711:
         slower runtime speed.
         :return float weight in grams
         """
-        value = (self.read_average(times) - self._offset)
+        v = self.read_average(times)
+        # print(f"{self._offset=}, {self._scale=}, {v=}")
+        value = (v - self._offset)
         grams = (value / self._scale)
+        self.power_cycle()
+
         return grams
 
     def tara(self, times: int = 16):
@@ -149,20 +145,21 @@ class HX711:
 
     def power_cycle(self):
         # stable readings
+        # self._pi.gpio_trigger(self._pd_sck, 100, 1)
         self.power_down()
         time.sleep(.001)
         self.power_up()
 
-
-    def reachable(self, max_tries: int = 20) -> bool:
-        scale_ready = False
-        for _ in range(max_tries):
-            if (self._pi.read(self._dout) == 1):
-                scale_ready = True
-                break
-            if (self._pi.read(self._dout) == 0):
-                scale_ready = False
-        return scale_ready
+    def reachable(self, timeout_s: int = 5):
+        ev = threading.Event()
+        cb = self._pi.callback(self._dout, pigpio.FALLING_EDGE, lambda g, l, t: ev.set())
+        try:
+            if self._pi.read(self._dout) == 0:
+                return
+            if not ev.wait(timeout_s):
+                raise ConnectionError(f"Scale is not reachable on pins: dout={self._dout}, pd_sck={self._pd_sck}")
+        finally:
+            cb.cancel()
 
     def calib_offset(self)-> None:
         offset = self.read_average()
@@ -193,7 +190,7 @@ class HX711:
 
     def json(self):
         return {
-            "pins": {"dout": self._dout, "pd_sck": self._pd_sck, "gain": HX711.gain_re_map.get(self._gain, 128)},
+            "pins": {"dout": self._dout, "pd_sck": self._pd_sck, "gain": self._gain},
             "calib": {"offset": self._offset, "scale": self._scale}
         }
 

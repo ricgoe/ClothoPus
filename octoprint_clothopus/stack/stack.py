@@ -18,7 +18,8 @@ class Stack:
         self.nfc.__enter__()
 
     def close(self):
-        self.nfc.__exit__(None, None, None)
+        if self.nfc is not None:
+            self.nfc.__exit__(None, None, None)
         self.pi.stop()
 
     def get_weight(self, times=16) -> float:
@@ -68,13 +69,39 @@ class Stack:
         return stack
 
 if __name__ == "__main__":
-    d={"data" : {}}
+    # from octoprint_clothopus.pn5180 import Sensor
+    # from octoprint_clothopus.hx711 import HX711
+    # from octoprint_clothopus.OPTag import PrintTagHandler
+    import time
     pi = pigpio.pi()
-    s=Stack(pi, spi_channel=0, dout=25, nss=24, busy=7, reset=8)
+    s=Stack("test", pi)
+    # d={"data" : {}}
+    s.nfc = Sensor(pi, spi_channel=0, nss=24, busy=7, reset=8)
+    # s.scale = HX711.from_json(pi, {'pins': {'dout': 25, 'pd_sck': 6, 'gain': 64}, 'calib': {'offset': 224972.125, 'scale': -211.16627717391304}})
+    s.scale = HX711(pi, dout=25, pd_sck=6, gain=128, calc_offset=True)
     s.prepare()
+    try:
+        # s.scale.reachable()
+        c=s.scale.calib_scale(int(input("Put known")))
+        print(c)
+        input("put funky weight")
+        first=s.get_weight()
+        print(first)
+        # s.scale = HX711.from_json()
+        # print(s.scale.reachable())
+        # s.write_tag({}, diff_only=True)
+        d=s.read_tag()
+        print(d)
+    except KeyboardInterrupt:
+        s.close()
+        print("cleaned")
+    finally:
+        s.close()
+        print("cleaned")
+    # s.prepare()
     # s.write_tag({}, diff_only=True)
-    d=s.read_tag()
+    # d=s.read_tag()
     #bytearray(b'\xa0\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00')
     #bytearray(b'\xbf\x00\x18d\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00')
-    s.close()
-    print(d)
+    # s.close()
+    # print(d)

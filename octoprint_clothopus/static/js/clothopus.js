@@ -3,6 +3,8 @@ $(function() {
         var self = this;
         self.settings = parameters[0];
         self.stacksArray = ko.observableArray();
+        self._filamentPollTimer = null;
+        self._filamentPollMs = 5000
         self.wizard = {
             _curr_id: null,
 
@@ -152,11 +154,31 @@ $(function() {
                 self.filamentRows(resp.rows || []);
             });
         };
+
+        self.startFilamentPolling = function () {
+            if (self._filamentPollTimer) return;
+            self.fetchFilaments();
+            self._filamentPollTimer = setInterval(function () {
+                if ($("#tab_plugin_clothopus").is(":visible")) { // sanity check
+                    self.fetchFilaments();
+                }
+            }, self._filamentPollMs);
+        };
+
+        self.stopFilamentPolling = function () {
+            if (!self._filamentPollTimer) return;
+            clearInterval(self._filamentPollTimer);
+            self._filamentPollTimer = null;
+        };
+
         self.onTabChange = function (current, previous) {
             if (current === "#tab_plugin_clothopus") {
-                self.fetchFilaments();
+                self.startFilamentPolling();
+            } else if (previous === "#tab_plugin_clothopus") {
+                self.stopFilamentPolling();
             }
         };
+
         self.onAfterBinding = function () {
             const stacks = self.settings.settings.plugins.clothopus.stacks || {};
             const rows = Object.keys(stacks).map(function (id) {

@@ -1,5 +1,6 @@
 # coding=utf-8
 from __future__ import absolute_import
+import threading
 import octoprint.plugin
 import flask
 from .stack import Stack
@@ -17,10 +18,13 @@ class ClothopusPlugin(
 ):
 
     def __init__(self):
+        self._scale_lock = threading.Lock()
+        self._nfc_lock = threading.Lock()
+        self._pi = pigpio.pi()
         self.active_stacks = {}
 
     def on_after_startup(self):
-
+        self._load_stacks_from_settings()
         self._logger.info(f"Loaded {len(self.active_stacks)} active stacks.")
 
     def on_shutdown(self):
@@ -76,13 +80,14 @@ class ClothopusPlugin(
         if command == "initialize_scale":
             stack_id = str(data.get("stack_id"))
             pins = data.get("pins")
-            stack = Stack(pi=pigpio.pi(), name=data.get("name"))
+            stack = Stack(pi=self._pi, name=data.get("name"))
             if not pins:
                 return flask.jsonify(dict(success=False, error="Missing pins."))
-            try:
-                scale = HX711(stack.pi, **pins)#TODO
-            except ConnectionError:
-                return flask.jsonify(dict(success=False, error="Could not connect to scale."))
+            with self._scale_lock:
+                try:
+                    scale = HX711(stack.pi, **pins)#TODO
+                except ConnectionError:
+                    return flask.jsonify(dict(success=False, error="Could not connect to scale."))
             stack.scale = scale
             self.active_stacks[stack_id] = stack
             print(self.active_stacks)
@@ -94,7 +99,8 @@ class ClothopusPlugin(
             stack: Stack = self.active_stacks.get(stack_id)
             if not stack or not stack.scale or not known_weight:
                 return flask.jsonify(dict(success=False, error="Could not connect to scale."))
-            result=stack.scale.calib_scale(known_weight)
+            with self._scale_lock:
+                result=stack.scale.calib_scale(known_weight)
             if not result:
                 return flask.jsonify(dict(success=False, error="Could not calibrate scale."))
             # self.save_scale(stack_id, result)
@@ -106,23 +112,29 @@ class ClothopusPlugin(
             nfc = data.get("nfc")
             if not stack or not nfc:
                 return flask.jsonify(dict(success=False, error="Missing nfc."))
-            sensor = Sensor.from_json(stack.pi, nfc)
-            if not sensor.reachable():
-                return flask.jsonify(dict(success=False, error="Could not connect to sensor."))
+            with self._nfc_lock:
+                sensor = Sensor.from_json(stack.pi, nfc)
+                if not sensor.reachable():
+                    return flask.jsonify(dict(success=False, error="Could not connect to sensor."))
             stack.nfc = sensor
             self.save_stack(stack_id, stack.json())
             return flask.jsonify(dict(success=True))
 
         if command == "fetch_filaments":
-            filaments = [stack.read_tag() for stack in self.active_stacks.values()]
+            with self._nfc_lock:
+                filaments = []
+                for stack in self.active_stacks.values():
+                    filament = stack.read_tag()
+                    if filament: filaments.append(filament | {"stack_name": stack.name})
             return {"rows": filaments}
 
         if command == "get_grams":
             stack_id = str(data.get("stack_id"))
             scale = self.active_stacks.get(stack_id)
-            if not scale or not scale.reachable():
-                return flask.jsonify(dict(success=False, error="Could not connect to scale."))
-            return flask.jsonify(dict(success=True, grams=scale.get_grams()))
+            with self._scale_lock:
+                if not scale or not scale.reachable():
+                    return flask.jsonify(dict(success=False, error="Could not connect to scale."))
+                return flask.jsonify(dict(success=True, grams=scale.get_grams()))
 
     def is_api_protected(self):
         return True
@@ -136,7 +148,7 @@ class ClothopusPlugin(
                 self._logger.exception("Failed to close stack")
         self.active_stacks = {}
         for key, cfg in stacks_cfg.items():
-            stack = Stack.from_json(cfg)
+            stack = Stack.from_json(self._pi, cfg)
             stack.prepare()
             self.active_stacks[key] = stack
 

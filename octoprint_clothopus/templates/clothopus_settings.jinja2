@@ -123,33 +123,20 @@
 <table class="table table-striped table-bordered table-condensed">
   <thead>
     <tr>
-      <th>ID</th>
-      <th>Name</th>
-
-      <th colspan="5" class="text-center">NFC</th>
-      <th colspan="3" class="text-center">Scale</th>
-    </tr>
-    <tr>
-      <th></th>
-      <th></th>
-
-      <th>NSS</th>
-      <th>BUSY</th>
-      <th>RESET</th>
-      <th>SPI</th>
-      <th>BAUD</th>
-
-      <th>DOUT</th>
-      <th>PD_SCK</th>
-      <th>GAIN</th>
+      <th style="width: 21%">Name</th>
+      <th style="width: 9%">NSS</th>
+      <th style="width: 9%">BUSY</th>
+      <th style="width: 9%">RESET</th>
+      <th style="width: 9%">SPI</th>
+      <th style="width: 15%">BAUD</th>
+      <th style="width: 9%">DOUT</th>
+      <th style="width: 9%">PD_SCK</th>
+      <th style="width: 10%">GAIN</th>
     </tr>
   </thead>
 
 <tbody data-bind="foreach: stacksArray">
   <tr>
-      <td>
-          <code data-bind="text: id"></code>
-      </td>
       <td>
         <input type="text" class="form-control input-sm" data-bind="value: data.name">
       </td>

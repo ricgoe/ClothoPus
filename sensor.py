@@ -144,8 +144,8 @@ class Sensor:
         if binary:
             return b
         if errors:
-            print("Ran into", ", ".join(errors))
-            return None
+            raise ConnectionError("Ran into", ", ".join(errors))
+            # return None
         return response
 
     def _to_binary(self, data: bytearray):

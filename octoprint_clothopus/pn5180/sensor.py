@@ -23,7 +23,7 @@ class Sensor:
         self._pi = pi
         self._spi_channel = int(spi_channel)
         self._baud = int(baud)
-        self._spi = self._pi.spi_open(self._spi_channel, self._baud, 32)
+        self._spi = self._pi.spi_open(self._spi_channel, self._baud, 0)
         self._nss_pin = int(nss)
         self._pi.set_mode(self._nss_pin, pigpio.OUTPUT)
         self._pi.write(self._nss_pin, 1)
@@ -144,7 +144,7 @@ class Sensor:
         if binary:
             return b
         if errors:
-            print("Ran into", ", ".join(errors))
+            raise ConnectionError(f"Ran into {', '.join(errors)}\ncode={b}")
             return None
         return response
 

@@ -32,3 +32,10 @@
 #tab_plugin_clothopus .btn-sm i {
   margin: 0;
 }
+
+#settings_plugin_clothopus .form-control {
+  box-sizing: border-box;
+  width: 100%;
+  height: 100%;
+  text-align: left;
+}

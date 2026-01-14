@@ -1,6 +1,6 @@
-from ..pn5180 import Sensor
-from ..hx711 import HX711
-from ..OPTag import PrintTagHandler
+# from ..pn5180 import Sensor
+# from ..hx711 import HX711
+# from ..OPTag import PrintTagHandler
 import pigpio
 
 class Stack:
@@ -15,7 +15,8 @@ class Stack:
         self.tag = PrintTagHandler()
 
     def prepare(self):
-        self.nfc.__enter__()
+        if self.nfc is not None:
+            self.nfc.__enter__()
 
     def close(self):
         if self.nfc is not None:
@@ -29,7 +30,7 @@ class Stack:
         with self.nfc.read_io():
             self.last_seen_tag=self.nfc.read_system_information(parse=True)
         if not self.last_seen_tag:
-            print("No last seen Tag")
+            # print("No last seen Tag")
             return
         with self.nfc.read_io():
             data = self.nfc.read_blocks(self.last_seen_tag['num_blocks'], self.last_seen_tag['block_size'], self.last_seen_tag['uid_lsb'])
@@ -61,43 +62,59 @@ class Stack:
         }
 
     @classmethod
-    def from_json(cls, data: dict):
-        pi = pigpio.pi()
+    def from_json(cls, pi, data: dict):
         stack = cls(name=data["name"], pi=pi)
         stack.nfc = Sensor.from_json(pi, data["nfc"])
         stack.scale = HX711.from_json(pi, data["scale"])
         return stack
 
 if __name__ == "__main__":
-    # from octoprint_clothopus.pn5180 import Sensor
-    # from octoprint_clothopus.hx711 import HX711
-    # from octoprint_clothopus.OPTag import PrintTagHandler
+    from octoprint_clothopus.pn5180 import Sensor
+    from octoprint_clothopus.hx711 import HX711
+    from octoprint_clothopus.OPTag import PrintTagHandler
     import time
+    from statistics import stdev
     pi = pigpio.pi()
-    s=Stack("test", pi)
+    stacks = [Stack(f"test{i}", pi) for i in range(5)]
+    # s=Stack("test", pi)
     # d={"data" : {}}
-    s.nfc = Sensor(pi, spi_channel=0, nss=24, busy=7, reset=8)
-    # s.scale = HX711.from_json(pi, {'pins': {'dout': 25, 'pd_sck': 6, 'gain': 64}, 'calib': {'offset': 224972.125, 'scale': -211.16627717391304}})
-    s.scale = HX711(pi, dout=25, pd_sck=6, gain=128, calc_offset=True)
-    s.prepare()
-    try:
-        # s.scale.reachable()
-        c=s.scale.calib_scale(int(input("Put known")))
-        print(c)
-        input("put funky weight")
-        first=s.get_weight()
-        print(first)
-        # s.scale = HX711.from_json()
-        # print(s.scale.reachable())
-        # s.write_tag({}, diff_only=True)
-        d=s.read_tag()
-        print(d)
-    except KeyboardInterrupt:
-        s.close()
-        print("cleaned")
-    finally:
-        s.close()
-        print("cleaned")
+    # for s in stacks:
+    stacks[1-1].nfc = Sensor(pi, spi_channel=0, nss=12, reset=13, busy=5)
+    stacks[2-1].nfc = Sensor(pi, spi_channel=0, nss=20, reset=26, busy=19)
+    stacks[3-1].nfc = Sensor(pi, spi_channel=0, nss=24, reset=8, busy=7)
+    stacks[4-1].nfc = Sensor(pi, spi_channel=0, nss=27, reset=22, busy=17)
+    stacks[5-1].nfc = Sensor(pi, spi_channel=0, nss=3, reset=4, busy=2)
+    stacks[1-1].scale = HX711(pi, dout=16, pd_sck=6)
+    stacks[2-1].scale = HX711(pi, dout=21, pd_sck=6)
+    stacks[3-1].scale = HX711(pi, dout=25, pd_sck=6)
+    stacks[4-1].scale = HX711(pi, dout=23, pd_sck=6)
+    stacks[5-1].scale = HX711(pi, dout=18, pd_sck=6)
+    # s.scale = HX711.from_json(pi, {'pins': {'dout': 25, 'pd_sck': 6, 'gain': 128}, 'calib': {'offset': -384446.3125, 'scale': -440.7148913043478}})
+    # s.scale = HX711.from_json(pi, {'pins': {'dout': 25, 'pd_sck': 6, 'gain': 128}, 'calib': {'offset': -384446.3125, 'scale': -440.7148913043478}})
+    # s.scale = HX711(pi, dout=21, pd_sck=6, gain=128, calc_offset=True)
+    for s in stacks:
+        # s.prepare()
+        try:
+            # s.scale.reachable()
+            # c=s.scale.calib_scale(int(input("Put known>>> ")))
+            # print(c)
+            # input("put funky weight")
+            first=s.get_weight()
+            print(first)
+            # s.scale = HX711.from_json()
+            # print(s.scale.reachable())
+            # s.write_tag({}, diff_only=True)
+            # d=s.read_tag()
+            # print(d)
+            # measurments=[]
+            # for i in range(10):
+            #     measurments.append(s.get_weight())
+            #     s.scale.power_cycle()
+            #     time.sleep(2)
+            # print(f"σ={stdev(measurments)}", "\n\n", measurments)
+        except KeyboardInterrupt:
+            s.close()
+            print("cleaned")
     # s.prepare()
     # s.write_tag({}, diff_only=True)
     # d=s.read_tag()

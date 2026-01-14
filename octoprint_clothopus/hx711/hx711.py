@@ -1,12 +1,10 @@
-# import RPi.GPIO as GPIO
-from contextlib import suppress
 import pigpio
 import time
 import warnings
 import threading
 
 class HX711:
-    gain_mapper: dict = {128: 3, 64: 2, 32: 1}
+    gain_mapper: dict = {128: 1, 64: 3, 32: 2}
 
     def __init__(self, pi:pigpio.pi, dout:int, pd_sck:int, gain:int=128, calc_offset: bool = True):
         """
@@ -16,6 +14,7 @@ class HX711:
         :param gain: set gain 128, 64, 32
         """
 
+
         self._gain = 0
         self._offset = 0
         self._scale = 1
@@ -23,6 +22,8 @@ class HX711:
         # Setup the gpio pin numbering system
         # GPIO.setmode(GPIO.BCM)
         self._pi = pi
+        if not self._pi.connected:
+            raise RuntimeError("pigpio daemon not connected (is pigpiod running?)")
 
         # Set the pin numbers
         self._pd_sck: int = int(pd_sck)
@@ -33,6 +34,7 @@ class HX711:
 
         # Setup the GPIO Pin as input
         self._pi.set_mode(self._dout, pigpio.INPUT)
+        self._pi.set_pull_up_down(self._dout, pigpio.PUD_UP)
 
         # Power up the chip
         self.power_up()
@@ -43,14 +45,6 @@ class HX711:
         if calc_offset:
             self.calib_offset()
 
-    def __enter__(self):
-        return self
-
-    def __exit__(self, exc_type, exc, tb):
-        with suppress(Exception):
-            self.clean_exit()
-        return False
-
     def set_gain(self, gain=128):
         if gain not in HX711.gain_mapper:
             warnings.warn(
@@ -60,7 +54,7 @@ class HX711:
 
         self._gain = gain
         self.power_up()
-        self.read()
+        self.read_wave()
 
 
     def read(self):
@@ -84,28 +78,73 @@ class HX711:
 
         for i in range(24):
             self._pi.gpio_trigger(self._pd_sck, 2, 1)
-            count = count << 1
-            if self._pi.read(self._dout):
-                count += 1
+            bit = self._pi.read(self._dout) & 1
+            count = (count << 1) | bit
 
-        self._pi.gpio_trigger(self._pd_sck, 2, 1) #TODO
-        count = count ^ 0x800000
+        # self._pi.gpio_trigger(self._pd_sck, 2, 1) #TODO
 
         # set channel and gain factor for next reading
         for _ in range(HX711.gain_mapper.get(self._gain, 1)):
             self._pi.gpio_trigger(self._pd_sck, 2, 1)
 
+        if count & 0x800000:
+            count -= 1 << 24
         return count
+
+    def read_wave(self):
+        bits = []
+        ev = threading.Event()
+        _clks = 24+HX711.gain_mapper.get(self._gain, 1)
+        _bit = {"value": 1}
+
+        def request(gpio, level, tick):
+            if level == 0:
+                bits.append(_bit["value"])
+                if len(bits) >= _clks:
+                    ev.set()
+        def retrieve(gpio, level, tick):
+            if level in (0, 1):
+                _bit["value"] = level
+
+        rtv = self._pi.callback(self._dout, pigpio.EITHER_EDGE, retrieve)
+        req = self._pi.callback(self._pd_sck, pigpio.FALLING_EDGE, request)
+
+        self.reachable()
+        try:
+            pulses = [p for _ in range(_clks)
+                for p in (pigpio.pulse(1 << self._pd_sck, 0, 15), pigpio.pulse(0, 1 << self._pd_sck, 15))
+            ]
+            self._pi.wave_clear()
+            self._pi.wave_add_generic(pulses)
+            wid = self._pi.wave_create()
+            try:
+                self._pi.wave_send_once(wid)
+                if not ev.wait(0.2):
+                    raise TimeoutError(f"Did not capture 24 bits, got {len(bits)}")
+            finally:
+                self._pi.wave_delete(wid)
+
+            count = 0
+            for b in bits[:24]:
+                count = (count << 1) | b
+
+            if count & 0x800000:
+                count -= 1 << 24
+            return count
+
+        finally:
+            rtv.cancel()
+            req.cancel()
 
     def read_average(self, times: int = 16):
         """
         Calculate average value from
         :param times: measure x amount of time to get average
         """
-        sum = 0
+        total = 0
         for i in range(times):
-            sum += self.read()
-        return sum / times
+            total += self.read_wave()
+        return total / times
 
     def get_grams(self, times: int = 16):
         """
@@ -118,7 +157,6 @@ class HX711:
         # print(f"{self._offset=}, {self._scale=}, {v=}")
         value = (v - self._offset)
         grams = (value / self._scale)
-        self.power_cycle()
 
         return grams
 
@@ -136,6 +174,7 @@ class HX711:
         """
         self._pi.write(self._pd_sck, 0)
         self._pi.write(self._pd_sck, 1)
+        time.sleep(0.001)
 
     def power_up(self):
         """
@@ -151,6 +190,8 @@ class HX711:
         self.power_up()
 
     def reachable(self, timeout_s: int = 5):
+        if self._pi.read(self._dout) == 0:
+            return
         ev = threading.Event()
         cb = self._pi.callback(self._dout, pigpio.FALLING_EDGE, lambda g, l, t: ev.set())
         try:
@@ -172,6 +213,7 @@ class HX711:
             known_weight = float(known_weight)
         except ValueError:
             return None
+        self.reachable()
         measured_weight = (self.read_average()-self._offset)
         scale = measured_weight/known_weight
         self._scale = scale

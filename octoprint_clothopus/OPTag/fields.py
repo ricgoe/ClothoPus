@@ -343,7 +343,8 @@ class Fields:
 
                 case "recommended":
                     # TODO Add Octoprint Warning
-                    print(f"Missing recommended field '{field.name}'", file=sys.stderr)
+                    # print(f"Missing recommended field '{field.name}'", file=sys.stderr)
+                    pass
 
                 case _:
                     assert False, f"Invalid field '{field.name}' 'required' value '{field.required}'"

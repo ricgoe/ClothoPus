@@ -6,6 +6,8 @@ import cbor2
 import os
 import types
 import yaml
+import re, json, requests
+from datetime import datetime
 from ..OPTag.fields import Fields, EncodeConfig
 
 
@@ -61,8 +63,6 @@ class PrintTagHandler:
 
     def patch_bin(self, patch_data: dict) -> bytes:
         for region_name, region in self._current_record.regions.items():
-            # print(f"{region_name=}")
-            print((patch_data.get("data") or {}).get(region_name) or {})
             region.update(
                 update_fields=patch_data.get("data", dict()).get(region_name, dict()),
                 remove_fields=patch_data.get("remove", dict()).get(region_name, dict()),
@@ -236,6 +236,52 @@ class PrintTagHandler:
         self.current_record = bytearray(full_data)
 
         return bytearray(full_data)
+    
+    def from_prusament_id(self, id: str):
+        html = requests.get(f"https://prusament.com/spool/?spoolId={id}").text
+        m = re.search(r"var spoolData\s*=\s*'([^']+)'", html)
+        if m:
+            data = json.loads(m.group(1))
+            if not data:
+                return
+            return data
+
+
+    def convert_iso_unix(self, timestamp: str) -> int:
+        dt = datetime.fromisoformat(timestamp)
+        return int(dt.timestamp())
+
+
+    def generate_opt_json(self, id: str) -> dict:
+        web_data: dict = self.from_prusament_id(id)
+        if not web_data:
+            return
+        res = {'data':      
+            {
+                'main': 
+                    {
+                        'material_class': 'FFF', 
+                        'material_type': web_data.get('filament').get('material'), 
+                        'material_name': web_data.get('filament').get('color_name'), 
+                        'brand_name': 'Prusament',
+                        'manufactured_date': self.convert_iso_unix(web_data.get('manufacture_date')),
+                        'nominal_netto_full_weight': round(web_data.get('weight'),-3),
+                        'actual_netto_full_weight': web_data.get('weight'),
+                        'empty_container_weight': web_data.get('spool_weight')+19,
+                        'primary_color': {'hex': web_data.get('filament').get('color_rgb')[1:]},
+                        
+                        'min_print_temperature': web_data.get('filament').get('he_min'), 
+                        'max_print_temperature': web_data.get('filament').get('he_max'), 
+                        'preheat_temperature': 170, 
+                        'min_bed_temperature': web_data.get('filament').get('hb_min'), 
+                        'max_bed_temperature': web_data.get('filament').get('hb_max'),
+                        'actual_full_length': web_data.get('length')*1000
+                        
+                        
+                        }},
+            'uri': f'https://3dtag.org/s/{id}'}
+        
+        return res
 
 
 

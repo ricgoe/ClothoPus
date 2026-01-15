@@ -46,6 +46,7 @@ class HX711:
             self.calib_offset()
 
     def set_gain(self, gain=128):
+        gain = int(gain)
         if gain not in HX711.gain_mapper:
             warnings.warn(
                 f"Invalid gain '{gain}', falling back to default (128). "
@@ -157,7 +158,7 @@ class HX711:
         # print(f"{self._offset=}, {self._scale=}, {v=}")
         value = (v - self._offset)
         grams = (value / self._scale)
-
+        
         return grams
 
     def tara(self, times: int = 16):
@@ -184,10 +185,10 @@ class HX711:
 
     def power_cycle(self):
         # stable readings
-        # self._pi.gpio_trigger(self._pd_sck, 100, 1)
-        self.power_down()
-        time.sleep(.001)
-        self.power_up()
+        self._pi.gpio_trigger(self._pd_sck, 200, 1)
+        # self.power_down()
+        # time.sleep(.001)
+        # self.power_up()
 
     def reachable(self, timeout_s: int = 5):
         if self._pi.read(self._dout) == 0:

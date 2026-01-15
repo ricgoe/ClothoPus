@@ -67,7 +67,6 @@ class Region:
         if len(update_fields) == 0 and len(remove_fields) == 0 and not clear:
             # Nothing to do
             return
-        print(bytearray(self.memory))
         encoded = self.fields.update(original_data=io.BytesIO(self.memory) if not clear else None, update_fields=update_fields, remove_fields=remove_fields, config=self.record.encode_config)
         encoded_len = len(encoded)
 

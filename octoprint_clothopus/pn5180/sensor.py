@@ -262,6 +262,7 @@ class Sensor:
         if n_blocks < 0 or n_blocks > 255: raise ValueError(f"{n_blocks=} but must be between 0 and 255")
         errors=[]
         for i, block in blocks.items():
+            if i == 79: continue
             with self.read_io(): #TODO why is IRQ not cleared. Read IRQ_STATUS
                 self._write_single_block(i, block, address)
                 status = self._read_buffer()

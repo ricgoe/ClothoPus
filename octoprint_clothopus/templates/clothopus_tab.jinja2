@@ -5,16 +5,18 @@
     <tr>
     <th style="width: 5%;"></th>
     <th style="width: 5%;">#</th>
-    <th style="width: 30%;">Name</th>
-    <th style="width: 10%;">Kind</th>
-    <th style="width: 30%;">Manufacturer</th>
-    <th style="width: 20%;">Actions</th>
+    <th style="width: 25%;">Name</th>
+    <th style="width: 15%;">Kind</th>
+    <th style="width: 20%;">Manufacturer</th>
+    <th style="width: 15%;">Grams</th>
+    <th style="width: 15%;">Consumed</th>
+    
     </tr>
   </thead>
 
   <tbody data-bind="if: filamentRows().length === 0">
     <tr>
-      <td colspan="6" class="text-muted">No filaments found.</td>
+      <td colspan="7" class="text-muted">No filaments found.</td>
     </tr>
   </tbody>
 
@@ -46,27 +48,152 @@
       </td>
 
       <td>
-        <div class="btn-group" role="group">
-          <button type="button"
-              class="btn btn-success btn-sm write-btn"
-              data-bind="click: $parent.writeFilament">
-            <i class="fas fa-pen"></i>
-          </button>
+        <span class="filament-grams"
+          data-bind="text: (function () {
+            if (!data || !data.main || !data.aux) return '';
+            return data.main.actual_netto_full_weight - data.aux.consumed_weight;
+          })()">
+        </span>
+      </td>
 
-          <button type="button"
-              class="btn btn-secondary btn-sm read-btn"
-              data-bind="click: $parent.readFilament">
-            <i class="fas fa-book"></i>
-          </button>
-
-          <button type="button"
-              class="btn btn-danger btn-sm delete-btn"
-              data-bind="click: $parent.deleteFilament">
-            <i class="fas fa-trash"></i>
-          </button>
-        </div>
+      <td>
+        <span class="filament-consumed"
+          data-bind="text: data?.aux?.consumed_weight || ''">
+        </span>
       </td>
     </tr>
   </tbody>
 
 </table>
+
+
+<div id="clothopus_empty_wizard" class="modal fade" tabindex="-1" role="dialog">
+  <div class="modal-dialog modal-lg">
+  <div class="modal-content">
+
+  <div class="modal-header">
+    <h4 class="modal-title">
+      Empty Tag Wizard
+    </h4>
+  </div>
+
+  <div class="modal-body" data-bind="foreach: currentEmptyStacks">
+    <div>
+      <code data-bind="text: id"></code>
+      <input type="text" class="form-control input-sm" data-bind="value: filament">
+    </div>
+  </div>
+
+  <div class="modal-footer">
+    <button type="button"
+      class="btn btn-danger btn-sm delete-btn"
+      data-bind="click: closeEmptyWizard">
+      Cancel
+    </button>
+    <button type="submit"
+      class="btn btn-primary btn-sm"
+      data-bind="click: submitEmptyWizard">
+      Submit
+    </button>
+  </div>
+
+  </div>
+  </div>
+</div>
+
+
+<div id="clothopus_wizard" class="modal fade" tabindex="-1" role="dialog">
+  <div class="modal-dialog modal-lg">
+  <div class="modal-content">
+
+  <div class="modal-header">
+    <h4 class="modal-title">
+      Scale Calibration Wizard
+    </h4>
+  </div>
+
+  <div class="modal-body" data-bind="with: wizard">
+    <div data-bind="visible: step() === 1">
+      <p>Enter the pin configuration for the scale.</p>
+
+      <div class="form-group">
+      <label>Name</label>
+      <input class="form-control" data-bind="value: name">
+      </div>
+      <div class="form-group">
+      <label>DOUT Pin</label>
+      <input type="number" class="form-control" data-bind="value: scale.dout">
+      </div>
+      <div class="form-group">
+      <label>PD_SCK Pin</label>
+      <input type="number" class="form-control" data-bind="value: scale.pd_sck">
+      </div>
+      <div class="form-group">
+      <label>Gain</label>
+      <input type="number"  class="form-control" data-bind="value: scale.gain">
+      </div>
+    </div>
+    <div data-bind="visible: step() === 2">
+      <h5>Place known weight on scale</h5>
+      <p>Enter the weight (g) and press "Calibrate".</p>
+
+      <div class="form-group">
+      <label>Known Weight (g)</label>
+      <input type="number" class="form-control" data-bind="value: knownWeight">
+      </div>
+    </div>
+    <div data-bind="visible: step() === 3">
+      <h5>Scale Calibrated</h5>
+      <pre data-bind="text: JSON.stringify(result(), null, 2)"></pre>
+    </div>
+    <div data-bind="visible: step() === 4">
+      <p>Enter the pin configuration for the NFC Sensor.</p>
+
+      <div class="form-group">
+      <label>NSS Pin</label>
+      <input type="number" class="form-control" data-bind="value: nfc.nss">
+      </div>
+      <div class="form-group">
+      <label>RESET Pin</label>
+      <input type="number" class="form-control" data-bind="value: nfc.reset">
+      </div>
+      <div class="form-group">
+      <label>BUSY Pin</label>
+      <input type="number" class="form-control" data-bind="value: nfc.busy">
+      </div>
+      <div class="form-group">
+      <label>SPI Channel</label>
+      <input type="number"  class="form-control" data-bind="value: nfc.spi_channel">
+      </div>
+      <div class="form-group">
+      <label>Baud</label>
+      <input type="number"  class="form-control" data-bind="value: nfc.baud">
+      </div>
+    </div>
+    <div data-bind="visible: step() === 5">
+      <h5>Stack succesfully added</h5>
+    </div>
+  </div>
+
+  <div class="modal-footer" data-bind="with: wizard">
+    <button class="btn btn-success"
+            data-bind="
+                click: primaryAction,
+                text: primaryText
+            ">
+    </button>
+    <button data-bind="
+                click: secondaryAction,
+                css: {
+                    'btn-danger': step() < 5,
+                    'btn-success': step() === 5
+                },
+                text: secondaryText
+            " class="btn">
+    </button>
+  </div>
+
+  </div>
+  </div>
+</div>
+

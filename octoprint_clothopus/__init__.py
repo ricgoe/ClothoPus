@@ -2,11 +2,13 @@
 from __future__ import absolute_import
 import threading
 import octoprint.plugin
+from octoprint.events import Events
 import flask
 from .stack import Stack
 from .hx711 import HX711
 from .pn5180 import Sensor
 import pigpio
+from .sanitze import sanitize_patch
 
 class ClothopusPlugin(
     octoprint.plugin.SettingsPlugin,
@@ -15,13 +17,19 @@ class ClothopusPlugin(
     octoprint.plugin.SimpleApiPlugin,
     octoprint.plugin.StartupPlugin,
     octoprint.plugin.ShutdownPlugin,
+    octoprint.plugin.EventHandlerPlugin,
 ):
 
     def __init__(self):
-        self._scale_lock = threading.Lock()
-        self._nfc_lock = threading.Lock()
+        self._lock = threading.Lock()
         self._pi = pigpio.pi()
-        self.active_stacks = {}
+        self.active_stacks: dict[str, Stack] = {}
+        
+    def on_event(self, event, payload):
+        if event == Events.PRINT_DONE:
+            for _id, stack in self.active_stacks.items():
+                stack.write_tag(with_weight=True)
+        
 
     def on_after_startup(self):
         self._load_stacks_from_settings()
@@ -33,18 +41,21 @@ class ClothopusPlugin(
                 stack.close()
             except Exception as e:
                 self._logger.info(e)
+        self._pi.stop()
+        self._logger.info(f"Cleaned up correctly")
 
     def on_settings_save(self, data):
+        data = sanitize_patch(data)
+        for stack_id in data.get("stacks", {}):
+            if stack_id not in self.active_stacks:
+                data["stacks"].pop(stack_id, None)
         super().on_settings_save(data)
         self._load_stacks_from_settings()
 
 
     def get_settings_defaults(self):
         return {
-            "max_spools": 5,
-            "auto_read": True,
-            "nfc_device": "/dev/ttyUSB0",
-            "stacks": {}
+            "stacks": {},
         }
 
     def get_template_configs(self):
@@ -65,7 +76,16 @@ class ClothopusPlugin(
         self._settings.set(["stacks"], stacks)
         self._settings.save()
         self._logger.info(f"Saved scale {data}")
-
+        
+    def delete_stack(self, stack_id):
+        stack = self.active_stacks.pop(stack_id, None)
+        stack.close()
+        stacks = self._settings.get(["stacks"]) or {}
+        _did = stacks.pop(stack_id, None)
+        if _did is None:
+            return
+        self._settings.set(["stacks"], stacks)
+        self._settings.save()
 
     def get_api_commands(self):
         return dict(
@@ -73,7 +93,9 @@ class ClothopusPlugin(
             calibrate_scale=["stack_id", "known_weight"],
             initialize_nfc=["stack_id", "nfc"],
             get_grams=["stack_id"],
-            fetch_filaments=[]
+            fetch_filaments=[],
+            delete_stack=["stack_id"],
+            init_empty_nfc=["data"]
         )
 
     def on_api_command(self, command, data: dict):
@@ -83,23 +105,22 @@ class ClothopusPlugin(
             stack = Stack(pi=self._pi, name=data.get("name"))
             if not pins:
                 return flask.jsonify(dict(success=False, error="Missing pins."))
-            with self._scale_lock:
+            with self._lock:
                 try:
                     scale = HX711(stack.pi, **pins)#TODO
                 except ConnectionError:
                     return flask.jsonify(dict(success=False, error="Could not connect to scale."))
             stack.scale = scale
             self.active_stacks[stack_id] = stack
-            print(self.active_stacks)
             return flask.jsonify(dict(success=True))
 
         if command == "calibrate_scale":
             stack_id = str(data.get("stack_id"))
             known_weight = data.get("known_weight")
-            stack: Stack = self.active_stacks.get(stack_id)
+            stack = self.active_stacks.get(stack_id)
             if not stack or not stack.scale or not known_weight:
                 return flask.jsonify(dict(success=False, error="Could not connect to scale."))
-            with self._scale_lock:
+            with self._lock:
                 result=stack.scale.calib_scale(known_weight)
             if not result:
                 return flask.jsonify(dict(success=False, error="Could not calibrate scale."))
@@ -108,33 +129,66 @@ class ClothopusPlugin(
 
         if command == "initialize_nfc":
             stack_id = str(data.get("stack_id"))
-            stack: Stack = self.active_stacks.get(stack_id)
+            stack = self.active_stacks.get(stack_id)
             nfc = data.get("nfc")
             if not stack or not nfc:
                 return flask.jsonify(dict(success=False, error="Missing nfc."))
-            with self._nfc_lock:
+            with self._lock:
                 sensor = Sensor.from_json(stack.pi, nfc)
                 if not sensor.reachable():
                     return flask.jsonify(dict(success=False, error="Could not connect to sensor."))
             stack.nfc = sensor
+            stack.prepare()
             self.save_stack(stack_id, stack.json())
-            return flask.jsonify(dict(success=True))
+            return flask.jsonify(dict(success=True, stack=stack.json()))
 
         if command == "fetch_filaments":
-            with self._nfc_lock:
-                filaments = []
-                for stack in self.active_stacks.values():
-                    filament = stack.read_tag()
-                    if filament: filaments.append(filament | {"stack_name": stack.name})
-            return {"rows": filaments}
+            empty = []
+            with self._lock:
+                try:
+                    filaments = []
+                    for _id, stack in self.active_stacks.items():
+                        if not stack.nfc: continue
+                        filament = stack.read_tag()
+                        if filament:
+                            if filament.get("data", {}).get("aux", {}).get("consumed_weight") is None:
+                                filament = stack.write_tag(with_weight=True)
+                            filaments.append(filament | {"stack_name": stack.name, "stack_id": _id})
+                        elif filament is not None: 
+                            empty.append({"id": _id, "filament": ""})
+                except TimeoutError as e:
+                    return flask.jsonify(dict(success=False, error=f"Stack {_id}: {e}"))
+            return flask.jsonify(dict(success=True, rows=filaments, empty=empty))
 
         if command == "get_grams":
             stack_id = str(data.get("stack_id"))
             scale = self.active_stacks.get(stack_id)
-            with self._scale_lock:
+            with self._lock:
                 if not scale or not scale.reachable():
                     return flask.jsonify(dict(success=False, error="Could not connect to scale."))
                 return flask.jsonify(dict(success=True, grams=scale.get_grams()))
+            
+        if command == "delete_stack":
+            stack_id = str(data.get("stack_id"))
+            stack = self.active_stacks.get(stack_id, None)
+            if stack is None:
+                return flask.jsonify(dict(success=False, error="Invalid scale."))
+            self.delete_stack(stack_id)
+            return flask.jsonify(dict(success=True))
+        
+        if command == "init_empty_nfc":
+            empties = data.get("data")
+            for empty in empties:
+                stack_id = str(empty.get("id"))
+                filament = str(empty.get("filament"))
+                stack = self.active_stacks.get(stack_id, None)
+                if stack is None:
+                    return flask.jsonify(dict(success=False, error="Invalid scale."))
+                with self._lock:
+                    resp = stack.init_tag_w_id(filament)
+                    if not resp: return flask.jsonify(dict(success=False, error="Invalid PRUSA-ID."))
+                    stack.write_tag()
+            return flask.jsonify(dict(success=True))
 
     def is_api_protected(self):
         return True
@@ -148,9 +202,10 @@ class ClothopusPlugin(
                 self._logger.exception("Failed to close stack")
         self.active_stacks = {}
         for key, cfg in stacks_cfg.items():
-            stack = Stack.from_json(self._pi, cfg)
-            stack.prepare()
-            self.active_stacks[key] = stack
+            with self._lock:
+                stack = Stack.from_json(self._pi, cfg)
+                stack.prepare()
+                self.active_stacks[key] = stack
 
 
 

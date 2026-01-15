@@ -1,10 +1,11 @@
 $(function() {
     function ClothopusViewModel(parameters) {
         var self = this;
-        self.settings = parameters[0];
+        self.p0 = parameters[0];
         self.stacksArray = ko.observableArray();
         self._filamentPollTimer = null;
-        self._filamentPollMs = 5000
+        self._filamentPollMs = 15000
+        self.currentEmptyStacks = ko.observableArray();
         self.wizard = {
             _curr_id: null,
 
@@ -67,6 +68,10 @@ $(function() {
                 }).done(function(resp) {
                     if (resp.success) {
                         self.wizard.step(5);
+                        self.stacksArray.push({
+                            id: self.wizard._curr_id,
+                            data: resp.stack
+                        })
                     } else {
                         new PNotify({
                             title: "Scale Error",
@@ -145,13 +150,76 @@ $(function() {
             self.wizard.resetForNewStack();
             $("#clothopus_wizard").modal("show");
         };
+
+        self.closeEmptyWizard = function() {
+            self.currentEmptyStacks([])
+            $("#clothopus_empty_wizard").modal("hide");
+            self.startFilamentPolling();
+        }
+
+        self.submitEmptyWizard = function() {
+            OctoPrint.simpleApiCommand(
+                "clothopus",
+                "init_empty_nfc", { data: ko.toJS(self.currentEmptyStacks) }
+            ).done(function(resp) {
+                if (resp.success) {
+                    self.closeEmptyWizard();
+                } else {
+                    new PNotify({
+                        title: "Error",
+                        text: resp.error || "Unknown error",
+                        type: "error"
+                    });
+                }
+            });
+        }
+
+        self.confirmDeleteStack = function (stack) {
+            showConfirmationDialog({
+                title: "Delete stack?",
+                onproceed: function () {
+                    self.deleteStack(stack);
+                }
+            });
+        };
+
+        self.deleteStack = function (stack) {
+            OctoPrint.simpleApiCommand("clothopus", "delete_stack", {
+                    stack_id: stack.id
+                }
+            ).done(function(resp) {
+                if (resp.success) {
+                    self.stacksArray.remove(stack);
+                } else {
+                    new PNotify({
+                        title: "Error",
+                        text: resp.error || "Unknown error",
+                        type: "error"
+                    });
+                }
+            });
+        }
+
         self.filamentRows = ko.observableArray([]);
         self.fetchFilaments = function () {
             OctoPrint.simpleApiCommand(
                 "clothopus",
                 "fetch_filaments"
             ).done(function (resp) {
-                self.filamentRows(resp.rows || []);
+                if (resp.success) {
+                    self.filamentRows(resp.rows || []);
+                    if (resp.empty.length > 0) {
+                        self.currentEmptyStacks(resp.empty)
+                        $("#clothopus_empty_wizard").modal("show");
+                        self.stopFilamentPolling();
+                    }
+                } else {
+                    new PNotify({
+                        title: "Error",
+                        text: resp.error || "Unknown error",
+                        type: "error"
+                    });
+                }
             });
         };
 
@@ -180,7 +248,8 @@ $(function() {
         };
 
         self.onAfterBinding = function () {
-            const stacks = self.settings.settings.plugins.clothopus.stacks || {};
+            self.settings = self.p0.settings
+            const stacks = self.settings.plugins.clothopus.stacks || {};
             const rows = Object.keys(stacks).map(function (id) {
                 return {
                     id: id,

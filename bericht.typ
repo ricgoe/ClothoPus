@@ -101,10 +101,105 @@ Der Einsatz von Techniken aus dem Bereich der Radio-Frequency-Identification sow
 
 #pagebreak()
 = Projektmanagement
+
 == Work Breakdown Structure
+
+Zur strukturierten Planung und Durchführung des Projekts wurde eine Work Breakdown Structure (WBS) entwickelt, welche das Gesamtvorhaben hierarchisch in klar definierte Arbeitspakete gliederte.
+
+Auf oberster Ebene wurde das Projekt in folgende Hauptphasen unterteilt:
+
+- Anforderungsanalyse  
+- Konzeptentwicklung  
+- Hardwareentwicklung  
+- Softwareentwicklung  
+- Integration und Test  
+
+Diese phasenorientierte Gliederung wurde durch eine komponentenorientierte Struktur ergänzt. Dadurch konnten sowohl zeitliche als auch funktionale Abhängigkeiten systematisch berücksichtigt werden.
+
+Im Bereich der Hardwareentwicklung umfassten die Arbeitspakete unter anderem:
+
+- Integration der Wägezellen  
+- Integration des NFC-Readers  
+- Entwicklung des 11-Pin-Kommunikationssystems  
+- Mechanische Integration der Filament-Stacks  
+
+Die Softwareentwicklung gliederte sich in:
+
+- Implementierung der Sensordatenerfassung  
+- Entwicklung der SPI-Kommunikation  
+- Implementierung der NFC-Kommunikation gemäß ISO-15693  
+- Erweiterung des PN5180-Treibers um Lese- und Schreibfunktionen  
+- Entwicklung der REST-Schnittstelle  
+- Integration in das OctoPrint-Plugin  
+
+Die Zerlegung erfolgte bis auf Ebene funktionaler Module, sodass klar abgegrenzte, testbare Einheiten entstanden.
+
+Als Meilensteine wurden technische Funktionsnachweise definiert, darunter:
+
+- erfolgreiche Gewichtsmessung eines Stacks  
+- stabile NFC-Kommunikation  
+- vollständige Lese- und Schreiboperation gemäß OpenPrintTag-Spezifikation  
+- erfolgreiche Datenanzeige in OctoPrint  
+- vollständige Systemintegration aller Komponenten  
+
+Diese Struktur ermöglichte eine transparente Fortschrittskontrolle und eine zielgerichtete Umsetzung des Systems.
+
 == Organisational Breakdown Structure
+
+Die Organisationsstruktur des Projekts war als gleichberechtigtes, selbstorganisiertes Teammodell ausgelegt.  
+
+Die Aufgabenverteilung erfolgte kompetenzbasiert und orientierte sich an individuellen Stärken.  
+Richard übernahm schwerpunktmäßig die Hardwareentwicklung, Jannis fokussierte sich auf die Softwareentwicklung, während Emil beide Bereiche unterstützte und insbesondere integrative Aufgaben zwischen Hard- und Software übernahm.
+
+Strategische und operative Entscheidungen wurden im Konsens getroffen.  
+Durch die geringe Teamgröße konnten Abstimmungsprozesse effizient und ohne hierarchische Eskalationsstufen durchgeführt werden.
+
+Die operative Organisation erfolgte über ein Kanban-Board, das als zentrales Backlog diente. Aufgaben wurden priorisiert, transparent verwaltet und kontinuierlich aktualisiert.
+
+Für die Versionsverwaltung wurde GitHub eingesetzt. Die Entwicklung erfolgte nach dem Feature-Branch-Prinzip. Neue Funktionalitäten wurden isoliert entwickelt, getestet und nach gemeinsamer Prüfung in den Hauptbranch integriert. Dieses Vorgehen reduzierte Integrationsrisiken und ermöglichte parallele Entwicklungsarbeit.
+
+Regelmäßige Abstimmungsmeetings fanden durchschnittlich viermal pro Woche statt und dienten der Fortschrittskontrolle, Problemidentifikation sowie kurzfristigen Repriorisierung.
+
 == Projektplan
+
+Das Projekt begann im Oktober 2025 und wurde im Dezember 2025 abgeschlossen.
+
+Die zeitliche Planung orientierte sich an den definierten Hauptphasen der WBS.  
+Eine iterative Detailplanung erfolgte fortlaufend über das Kanban-System, wodurch flexibel auf neue Erkenntnisse reagiert werden konnte.
+
+Während der Umsetzung traten mehrere technische Herausforderungen auf, die Einfluss auf den Projektverlauf hatten.  
+Dazu zählten insbesondere:
+
+- die Beschaffung inkompatibler NFC-Reader (ISO-14443 statt ISO-15693),  
+- Timing-Probleme innerhalb der SPI-Kommunikation,  
+- notwendige Erweiterungen des PN5180-Treibers,  
+- das Kriechverhalten der Wägezellen unter Dauerlast.
+
+Diese Herausforderungen erforderten zusätzliche Entwicklungsarbeit, konnten jedoch innerhalb des vorgesehenen Projektzeitraums gelöst werden.
+
+Der funktionale Projektumfang blieb stabil. Die strategische Entscheidung, zunächst eine stabile Integration mit OctoPrint zu realisieren, ermöglichte eine klar abgegrenzte Demonstrationsfähigkeit des Systems.
+
 == Vorgehensmodell in der Entwicklung
+
+Das Projekt folgte einem hybriden Vorgehensmodell.  
+
+Auf Makroebene wurde eine phasenorientierte Struktur gewählt (Analyse, Konzept, Hardware, Software, Integration).  
+Auf Mikroebene erfolgte die Umsetzung agil und inkrementell.
+
+Die Steuerung der Entwicklung basierte auf einem Kanban-System mit priorisierten Aufgaben.  
+Neue Funktionalitäten wurden eigenständig in Feature-Branches entwickelt und nach erfolgreichem Test in gemeinsamen Integrationsschritten zusammengeführt. Insgesamt wurden drei zentrale Integrationspunkte definiert, auf denen jeweils weiterführende Funktionen aufbauten.
+
+Testing erfolgte kontinuierlich während der Entwicklung sowie verpflichtend vor jedem Merge-Vorgang.  
+Ein erheblicher Teil der Implementierung wurde im Pair-Programming durchgeführt, wodurch eine implizite Qualitätssicherung gewährleistet war.
+
+Formale Sprintzyklen wurden nicht dauerhaft etabliert; in kritischen Projektphasen wurden jedoch gezielt intensive Entwicklungsintervalle eingesetzt, um Verzögerungen auszugleichen.
+
+Die größte Herausforderung bestand in der Bewältigung unvorhergesehener technischer Probleme, insbesondere im Bereich der Low-Level-Kommunikation.  
+
+Positiv hervorzuheben ist die hohe Reaktionsfähigkeit des Teams. Durch konsensorientierte Entscheidungsfindung und kurze Kommunikationswege konnten kritische Situationen schnell analysiert und nachhaltig gelöst werden.
+
+Für zukünftige Projekte empfiehlt sich die explizite Einplanung zusätzlicher Zeitpuffer sowie eine frühzeitige technische Risikoanalyse zur weiteren Optimierung des Projektmanagements.
+
 
 #pagebreak()
 = Entwurf und Implementierung

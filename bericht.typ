@@ -155,17 +155,18 @@ Die Umsetzung erfolgte iterativ: Einzelne Komponenten wurden zunächst separat g
 == Work Breakdown Structure
 
 Zur strukturierten Planung und Durchführung des Projekts wurde eine Work Breakdown Structure (WBS) entwickelt, welche das Gesamtvorhaben hierarchisch in klar definierte Arbeitspakete gliederte.
-Auf oberster Ebene wurde das Projekt in die 5 Hauptphasen Anforderungsanalyse, Konzeptentwicklung, Hardwareentwicklung, Softwareentwicklung und Integration inklusive Test.
+Auf oberster Ebene wurde das Projekt in die fünf Hauptphasen der Anforderungsanalyse, Konzeptentwicklung, Hardwareentwicklung, Softwareentwicklung und Integration inklusive Test unterteilt.
 
 Diese phasenorientierte Gliederung wurde durch eine komponentenorientierte Struktur ergänzt. 
 Dadurch konnten sowohl zeitliche als auch funktionale Abhängigkeiten systematisch berücksichtigt werden.
 Im Bereich der Hardwareentwicklung umfassten die Arbeitspakete unter anderem die jeweilige Integration von Wägezellen und NFC-Readern, die Entwicklung des 11-Pin-Kommunikationssystems sowie die mechanische Integration der Filament-Stacks.
 
-Die Softwareentwicklung gliederte sich in sechsstufig in die Teilbereiche Implementierung der Sensordatenerfassung, Entwicklung der SPI-Kommunikation, ISO-15693 gemäße Implementierung der NFC-Kommunikation, Erweiterung des PN5180-Treibers um Lese- und Schreibfunktionen, Entwicklung der REST-Schnittstelle und Integration in das OctoPrint-Plugin.
+Die Softwareentwicklung gliederte sich sechsstufig in die Teilbereiche Implementierung der Sensordatenerfassung, Entwicklung der SPI-Kommunikation, ISO-15693 gemäße Implementierung der NFC-Kommunikation, Erweiterung des PN5180-Treibers um Lese- und Schreibfunktionen, Entwicklung der REST-Schnittstelle und Integration in das OctoPrint-Plugin.
 
 Die Zerlegung erfolgte bis auf die Ebene funktionaler Module, sodass klar abgegrenzte, testbare Einheiten entstanden.
 
-Als Meilensteine wurden technische Funktionsnachweise definiert. Diese umfassen die erfolgreiche Gewichtsmessung eines Stacks, eine stabile NFC-Kommunikation, die Implementierung vollständiger Lese- und Schreiboperationen gemäß OpenPrintTag-Spezifikation, die Visualisierung der ermittelten Daten innerhalb des OctoPrint-Plugins und schließlich die vollständige Systemintegration aller Komponenten.
+Als Meilensteine wurden technische Funktionsnachweise definiert. 
+Diese umfassen die erfolgreiche Gewichtsmessung eines Stacks, eine stabile NFC-Kommunikation, die Implementierung vollständiger Lese- und Schreiboperationen gemäß OpenPrintTag-Spezifikation, die Visualisierung der ermittelten Daten innerhalb des OctoPrint-Plugins und schließlich die vollständige Systemintegration aller Komponenten.
 
 Diese Struktur ermöglichte eine transparente Fortschrittskontrolle und eine zielgerichtete Umsetzung des Systems.
 
@@ -174,7 +175,8 @@ Diese Struktur ermöglichte eine transparente Fortschrittskontrolle und eine zie
 Die Organisationsstruktur des Projekts war als gleichberechtigtes, selbstorganisiertes Teammodell ausgelegt.  
 
 Die Aufgabenverteilung erfolgte kompetenzbasiert und orientierte sich an individuellen Stärken.  
-Richard übernahm schwerpunktmäßig die Hardwareentwicklung, Jannis fokussierte sich auf die Softwareentwicklung. Emil unterstützte beide Bereiche und übernahm insbesondere integrative Aufgaben zwischen Hard- und Software.
+Richard übernahm schwerpunktmäßig die Hardwareentwicklung, Jannis fokussierte sich auf die Softwareentwicklung. 
+Emil unterstützte beide Bereiche und übernahm insbesondere integrative Aufgaben zwischen Hard- und Software.
 
 Strategische und operative Entscheidungen wurden im Konsens getroffen.  
 Durch die geringe Teamgröße konnten Abstimmungsprozesse effizient und ohne hierarchische Eskalationsstufen durchgeführt werden.
@@ -218,7 +220,7 @@ Insgesamt wurden drei zentrale Integrationspunkte definiert, auf denen jeweils w
 Testing erfolgte kontinuierlich während der Entwicklung sowie verpflichtend vor jedem Merge-Vorgang.  
 Ein erheblicher Teil der Implementierung wurde im Pair-Programming durchgeführt, wodurch eine implizite Qualitätssicherung gewährleistet wurde.
 
-Formale Sprintzyklen wurden nicht dauerhaft etabliert; in kritischen Projektphasen wurden jedoch gezielt intensiven Entwicklungsintervallen gearbeitet, um Verzögerungen aufzuholen und gesamtheitlichen Projektfortschritt im notwendigen Zeitrahmen sichern zu können.
+Formale Sprintzyklen wurden nicht dauerhaft etabliert; in kritischen Projektphasen wurden jedoch gezielt in intensiven Entwicklungsintervallen gearbeitet, um Verzögerungen aufzuholen und gesamtheitlichen Projektfortschritt im notwendigen Zeitrahmen sichern zu können.
 
 Die größte Herausforderung bestand in der Bewältigung unvorhergesehener technischer Probleme, insbesondere im Bereich der Low-Level-Kommunikation.  
 

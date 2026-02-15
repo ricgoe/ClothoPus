@@ -69,6 +69,22 @@
 ]
 #pagebreak()
 
+= Präambel
+Der Name „ClothoPus“ ist aus einer symbolischen Verbindung zweier Begriffe entstanden.
+„Clotho“ entstammt der griechischen Mythologie und bezeichnet eine der drei Moiren, die als Schicksalsgöttinnen den Lebensfaden der Menschen spinnen. In Anlehnung an dieses Motiv steht Clotho sinnbildlich für den Faden als zentrales Element des Systems. Im Kontext des Projekts entspricht dieser Faden dem 3D-Druck-Filament als grundlegendes Fertigungsmaterial.
+Der zweite Bestandteil „Pus“ leitet sich vom Maskottchen der Druckmanagement-Software OctoPrint ab, dem Oktopus. Da das entwickelte System direkt in OctoPrint integriert ist, stellt dieser Namensbestandteil die technische und funktionale Verbindung zur Softwareplattform dar.
+Aus der Kombination beider Begriffe entstand die Bezeichnung „ClothoPus“. 
+
+#set align(center)
+#v(20pt)
+#figure(
+ image("assets/image-1.png"), caption: [ClothoPus Maskottchen.]
+)<mascot>
+
+#set align(left)
+
+#pagebreak()
+
 // Inhaltsverzeichnis
 #set page(numbering: "1")
 #outline(
@@ -78,23 +94,51 @@
 #pagebreak()
 
 = Einleitung
-== Motivation
-Im Bereich der privaten Nutzung von 3D-Druck Techniken, spezifisch Fused Deposition Modelling (FDM) und Fused Layer Modelling (FLM) ist das Filament als Fertigungsmaterial ein Kernbestandteil.  
-Ein häufiges Problem, das sowohl in der persönlichen Arbeit als auch in der FLM/FDM-Community identifiziert wurde, ist die regelmäßige und umständliche Überprüfung des Filamentbestandes.  
-Diese umfasst im Mindesten das Überprüfen des aktuell eingebauten Filemants, das Demontieren der Filamentrolle aus dem Drucker selbst, einer anschließenden Gewichtsmessung inklusive Subtraktionsrechnung des Eigenwichts der Filemantrolle selbst und schließlich erneutem Einsetzen des Filaments im Vorfeld des eigentlichen Fertigungsprozesses. 
-Besonders bei der Arbeit mit mehreren Filamenten innerhalb eines Druckvorgangs, wo dieser Vorgang im Notfall für jedes Filemant durchgeführt werden muss, kann so ein großer Zeitaufwand entstehen.  
-In Zeiten, in denen verfügbare Zeit und ihrer effizienten Nutzung indirekt stets an Wert zunimmt, ist die Entwicklung einer zeitsparenderen Lösung unabdingbar.
-Durch die kontiuierlich sinkenden Preise für Druckgeräte wächst die Anzahl der Nutzer mehr und mehr.
+// == Motivation
+// Im Bereich der privaten Nutzung von 3D-Druck Techniken, spezifisch Fused Deposition Modelling (FDM) und Fused Layer Modelling (FLM) ist das Filament als Fertigungsmaterial ein Kernbestandteil.  
+// Ein häufiges Problem, das sowohl in der persönlichen Arbeit als auch in der FLM/FDM-Community identifiziert wurde, ist die regelmäßige und umständliche Überprüfung des Filamentbestandes.  
+// Diese umfasst im Mindesten das Überprüfen des aktuell eingebauten Filemants, das Demontieren der Filamentrolle aus dem Drucker selbst, einer anschließenden Gewichtsmessung inklusive Subtraktionsrechnung des Eigenwichts der Filamentrolle selbst und schließlich erneutem Einsetzen des Filaments im Vorfeld des eigentlichen Fertigungsprozesses. 
+// Besonders bei der Arbeit mit mehreren Filamenten innerhalb eines Druckvorgangs, wo dieser Vorgang im Notfall für jedes Filemant durchgeführt werden muss, kann so ein großer Zeitaufwand entstehen.  
+// In Zeiten, in denen verfügbare Zeit und ihrer effizienten Nutzung indirekt stets an Wert zunimmt, ist die Entwicklung einer zeitsparenderen Lösung unabdingbar.
+// Durch die kontiuierlich sinkenden Preise für Druckgeräte wächst die Anzahl der Nutzer mehr und mehr.
 
-Um dieses Problem zu entschärfen präsentieren wir _Clothopus_, ein smartes System zur automatischen Registrierung und Gewichtsmessung von bis zu fünf Filamenten zeitgleich. 
-_Clothopus_ verlegt den Fokus für den Nutzer zurück auf die Kernaufgabe des Designens und sorgt so für einen angenehmeren Workflow.
+// Um dieses Problem zu entschärfen präsentieren wir _Clothopus_, ein smartes System zur automatischen Registrierung und Gewichtsmessung von bis zu fünf Filamenten zeitgleich. 
+// _Clothopus_ verlegt den Fokus für den Nutzer zurück auf die Kernaufgabe des Kostruierens und sorgt so für einen zeitoptimierten Workflow, insbesondere bei der Nutzung von Remote-Systemen. Hierbei können potenzielle Schäden an Druckhardware infolge einer Verwechselung von Filamentmaterialien vorgebeugt werden, da eine eindeutige Kennzeichnung von Filamentrollen stattfindet. 
+
+// == Zielsetzung
+// _Clothopus_ soll den Nutzern als ein inuitives und schlankes System zur Filemantverwaltung und -übersicht dienen, dass die zeitlichen Anfordungen an nebensächlich anfallende Aufgaben reduziert.  
+// Präziser umfasst dies das automatisierte Identifizieren und Auswiegen der in den Drucker eingesetzten Filamente.  
+// Über eine entsprechende Software können die Nutzer die aktuell eingesetzten Filamente samt Gewichtsangabe einsehen.
+// Die Handwarekomponente des Produkt setzt sich zusammen aus fünf identischen Filamentstationen sowie einem zentralen Gehäuse, in dem die Komponenten zur Evaluation der Messdaten verbait sind.
+// Zusätzlich zu externen RFID-Tags ist _Clothopus_ explizit mit neuen Filemantprodukten der Marke Prusa Research, die seit Kurzem
+
+
+== Motivation
+
+Im Bereich der privaten Nutzung von 3D-Druck-Techniken, insbesondere Fused Deposition Modelling (FDM) und Fused Layer Modelling (FLM), stellt Filament das zentrale Fertigungsmaterial dar.  
+Ein wiederkehrendes Problem sowohl in der eigenen praktischen Arbeit als auch innerhalb der Community ist die regelmäßige und umständliche Überprüfung des verfügbaren Filamentbestands.
+
+Die Bestimmung der Restmenge erfordert typischerweise das Entnehmen der Filamentrolle aus dem Drucker, eine separate Gewichtsmessung sowie die manuelle Subtraktion des Eigengewichts der Spule. Anschließend muss das Filament erneut montiert und korrekt eingeführt werden.  
+Insbesondere bei Druckvorgängen mit mehreren Materialwechseln oder bei der Nutzung mehrerer Drucker entsteht hierdurch ein erheblicher Zeitaufwand.
+
+Mit der zunehmenden Verbreitung kostengünstiger 3D-Drucksysteme wächst auch die Anzahl der Anwender kontinuierlich. Parallel dazu steigt der Anspruch an Effizienz, Automatisierung und Remote-Fähigkeit der eingesetzten Systeme.  
+Eine fehlende Transparenz über eingesetzte Materialien und verbleibende Restmengen kann dabei nicht nur zu abgebrochenen Druckaufträgen führen, sondern im ungünstigsten Fall auch zu Materialverwechslungen und daraus resultierenden Hardwareproblemen.
+
+Vor diesem Hintergrund ergibt sich der Bedarf nach einer automatisierten, zuverlässigen und in bestehende Workflows integrierbaren Lösung zur Filamentverwaltung.
 
 == Zielsetzung
-_Clothopus_ soll den Nutzern als ein inuitives und schlankes System zur Filemantverwaltung und -übersicht dienen, dass die zeitlichen Anfordungen an nebensächlich anfallende Aufgaben reduziert.  
-Präziser umfasst dies das automatisierte Identifizieren und Vermessen der in den Drucker eingesetzten Filamente.  
-Über eine entsprechende Software können die Nutzer die aktuell eingesetzten Filamente samt Gewichtsangabe einsehen.
-Die Handwarekomponente des Produkt setzt sich zusammen aus fünf identischen Filamentstationen sowie einer zentralen Box mit verbauten Komponenten zur Evaluation der Messdaten.
-Zusätzlich zu externen RFID-Tags ist _Clothopus_ explizit mit neuen Filemantprodukten der Marke Prusa Research, die seit Kurzem
+
+Ziel des Projekts ist die Entwicklung eines integrierten Gesamtsystems zur automatisierten Verwaltung von 3D-Druck-Filamenten.  
+Das System soll Filamentrollen kontinuierlich wiegen, die zugehörigen NFC-Tags auslesen und die gewonnenen Informationen dem Nutzer innerhalb einer überscihtlichen Umgebung bereitstellen.
+
+== Vorgehensweise
+
+Die Hardwarearchitektur umfasst bis zu fünf identische Filamentstationen sowie eine zentrale Steuereinheit.  
+Jede Filamentstation verfügt über eine Wägezelle zur Gewichtserfassung sowie einen NFC-Reader zur Identifikation des eingesetzten Materials.
+
+Das Gesamtsystem aus Hardware und Software verfolgt das Ziel, manuelle Messprozesse vollständig zu ersetzen, Materialverwechslungen zu vermeiden und insbesondere bei Remote-Setups einen transparenten, zeiteffizienten Workflow zu ermöglichen.
+
+
 
 == Vorgehensweise
 Der Einsatz von Techniken aus dem Bereich der Radio-Frequency-Identification sowie unaufällig eingesetzen Wägezellen bieten eine elegante Lösung zur Filamentüberwachung. 
@@ -207,88 +251,102 @@ Für zukünftige Projekte empfiehlt sich die explizite Einplanung zusätzlicher 
 _Clothopus_ ist als modulares, vernetztes Smart-System zur automatisierten Filamentverwaltung im Bereich des privaten und semiprofessionellen 3D-Drucks konzipiert.  
 Das Produkt dient der kontinuierlichen Identifikation und Gewichtserfassung mehrerer Filamentrollen und stellt diese Informationen externen Druckmanagementsystemen zur Verfügung.
 
-Das Gesamtsystem besteht aus mehreren identischen Filamentstationen sowie einer zentralen Steuereinheit.  
-Jede Filamentstation, im Folgenden als Stack bezeichnet, ist für die Aufnahme genau einer Filamentrolle ausgelegt und integriert sowohl eine Wägezelle zur Gewichtsmessung als auch einen NFC-Reader zur Identifikation des eingesetzten Filaments.  
-Durch die modulare Auslegung können bis zu fünf Stacks parallel innerhalb eines Systems betrieben werden.
 
-Als zentrale Steuereinheit kommt ein Raspberry Pi 4 zum Einsatz.  
-Dieser übernimmt die zyklische Abfrage der angeschlossenen Stacks, die Vorverarbeitung und Plausibilisierung der Sensordaten sowie die eindeutige Zuordnung von Gewichtsmessungen zu den identifizierten Filamenten.  
-Darüber hinaus stellt der Raspberry Pi die gesammelten Informationen über eine Netzwerkverbindung für externe Softwarekomponenten bereit.
+#figure(
+ image("assets/image-2.png"), caption: [Aufbau des Gesamtsystems.]
+)<systemview>
 
-Die interne Kommunikation zwischen den Filamentstationen und der zentralen Steuereinheit erfolgt über ein unser 11-Pin-Kommunikationssystem.  
-Dieses Interface dient sowohl der Spannungsversorgung der Sensorik als auch der bidirektionalen Datenübertragung.  
-Über die Verbindung werden Messwerte der Wägezelle, Identifikationsdaten des NFC-Readers sowie Status- und Steuerinformationen übertragen.  
-Die Bündelung aller relevanten Signale in einem einheitlichen Stecksystem vereinfacht die mechanische Integration, den modularen Ausbau sowie Wartungsarbeiten.
+Das Gesamtsystem, welches in  @systemview dargestellt ist, besteht aus mehreren identischen Filamentstationen sowie einer zentralen Steuereinheit. Für die zentrale Steuereinheit kommt ein Raspberry Pi 4 zum Einsatz. 
+Jede Filamentstation, im Folgenden als Stack bezeichnet, ist für die Aufnahme einer Filamentrolle ausgelegt und integriert sowohl eine Wägezelle zur Gewichtsmessung als auch einen NFC-Reader zur Identifikation des eingesetzten Filaments.  
+Durch die modulare Auslegung des Systems können bis zu fünf Stacks parallel innerhalb eines Gesamtsystems betrieben werden. Die Einschränkung auf maximal fünf Stacks ist hierbei der Anzahl der auf dem Raspberry Pi verfügbaren GPIO-Pins geschuldet.
+
+  
+Der Raspberry Pi übernimmt die zyklische Abfrage der angeschlossenen Stacks, die Verarbeitung Sensordaten sowie die Zuordnung von Gewichtsmessungen zu den Filamentdaten.  
+
+Die Kommunikation zwischen den Stacks und der zentralen Steuereinheit erfolgt über einen Kabelanschluss.  
+Dieser dient sowohl der Spannungsversorgung der Sensorik als auch der Datenübertragung von Steuersignalen und Sensordaten, wie Messwerten der Wägezellen sowie Daten der NFC-Tags.
+Das Bündeln aller relevanten Signale erfolgt über eigens entwickelte Leiterplatten (PCBs) innerhalb der Stacks sowie auf der zentralen Steuereinheit (Ausführung als PiHat). Dies vereinfacht die mechanische Integration, den modularen Ausbau sowie Wartungsarbeiten.
 
 Zur externen Vernetzung ist der Raspberry Pi 4 über WLAN oder Ethernet in das lokale Netzwerk des Nutzers eingebunden.  
-Über diese Verbindung werden die erfassten Filamentdaten an angeschlossene Anwendungen übermittelt, beispielsweise an Druckmanagement-Software wie OctoPrint.  
-Dem Nutzer stehen dadurch jederzeit aktuelle Informationen über eingesetzte Filamente und verfügbare Restmengen zur Verfügung, ohne dass manuelle Messungen erforderlich sind.
+Auf dem Raspberry Pi wird OctoPrint ausgeführt, sodass die Filamentdaten lokal durch über das Clothopus-Plugin zur Verfügung gestellt werden.
+
+
 
 == Technologie und Daten
-=== Sensoren und Eingänge (Beteiligter A)
+=== Sensoren und Eingänge
 
-Als primäre Sensorkomponenten kommen in jedem Filament-Stack eine Wägezelle sowie ein NFC-Reader zum Einsatz.  
-Die Gewichtserfassung erfolgt über eine einzelne Wägezelle pro Stack, deren Messsignal mittels eines HX711-Verstärker- und ADC-Moduls digitalisiert wird.  
-Der HX711 stellt die gemessenen Gewichtswerte über eine taktgesteuerte Schnittstelle bereit und ermöglicht eine hochauflösende Erfassung auch geringer Gewichtsänderungen.
+Als primäre Sensorkomponenten kommen in jedem Stack eine Wägezelle sowie ein NFC-Reader zum Einsatz.  
+Die Gewichtserfassung erfolgt über eine Wägezelle, deren analoges Brückensignal durch den HX711-Wägezellentreiber mit integriertem Analog-Digital-Wandler verstärkt und digitalisiert wird.  
+Der HX711 stellt die gemessenen Gewichtswerte über eine taktgesteuerte Schnittstelle bereit und ermöglicht eine für den Einsatzzweck ausreichende Messgenauigkeit.
 
-Zur Identifikation der Filamente wird ein NFC-Reader des Typs PN5180 verwendet.  
-Dieser unterstützt mehrere NFC-Standards, wobei im Rahmen des Projekts gezielt der ISO-15693-Standard (NFC-V) genutzt wird, da dieser den Spezifikationen der OpenPrintTags entspricht.  
-Über den NFC-Reader werden sowohl Identifikations- als auch Zusatzdaten der Filamenttags erfasst.
+Zum Auslesen der NFC-Tags und somit zur Identifikation der Filamente wird ein NFC-Reader des Typs PN5180 verwendet.  
+Dieser unterstützt mehrere NFC-Standards, wobei im Rahmen des Projekts gezielt der ISO-15693-Standard (NFC-V) genutzt wird, da dieser den Spezifikationen des OpenPrintTag-Standards entspricht.  
+Über den NFC-Reader werden sowohl Identifikations- als auch sämtliche Nutzdaten der Filamenttags erfasst.\
+Auf Basis eines bestehenden Open-Source-Treibers wurde eine vollständige Erweiterung implementiert.
+Während der ursprüngliche Treiber lediglich grundlegende Inventory-Anfragen, wie beispielsweise das Auslesen der UUID, unterstützte, wurden sämtliche Lese- und Schreiboperationen zur standardkonformen Verarbeitung der auf dem NFC-Tag gespeicherten Datenblöcke gemäß der ISO15693-Spezifikation eigenständig entwickelt.
+
+Die Kommunikation mit dem PN5180 erfolgt dabei auf niedriger Abstraktionsebene durch den Versand hersteller[Quelle]- und normdefinierter[Quelle] Datenframes in hexadezimaler Form über die SPI-Schnittstelle des Raspberry Pi.  
+Diese Vervollständigung des Treibers stellt eine zentrale technische Eigenleistung des Projekts dar.
+
 
 Die Kombination aus Gewichtsmessung und eindeutiger Filamentidentifikation bildet die Grundlage für eine automatisierte und zuverlässige Erfassung aller relevanten Eingangsdaten des Systems.
 
-=== Connectivity (Beteiligter B)
+=== Connectivity
 
-Die interne Anbindung der Filament-Stacks an die zentrale Steuereinheit erfolgt über ein proprietäres 11-Pin-Kommunikationssystem.  
+Die Anbindung der Filament-Stacks an die zentrale Steuereinheit erfolgt über ein proprietäres 11-Pin-Kommunikationssystem.  
 Über diese Verbindung werden sowohl die Spannungsversorgung als auch die Datenübertragung realisiert.
 
 Die Kommunikation mit dem PN5180-NFC-Reader erfolgt über eine SPI-Schnittstelle, über die Steuer- und Nutzdaten ausgetauscht werden.  
-Die Anbindung der Wägezelle erfolgt über das HX711-Modul, welches über dedizierte Takt- und Datenleitungen ausgelesen wird.
+Die Anbindung der Wägezelle erfolgt über das HX711-Modul, welches über je eine Takt- und Datenleitung ausgelesen wird.
 
 Zur externen Vernetzung stellt die zentrale Steuereinheit die erfassten Daten über eine modulare Softwareschnittstelle bereit.  
 Aktuell ist das System in ein OctoPrint-Plugin eingebunden, wobei die Datenübertragung über eine REST-API erfolgt.  
-Durch diese Architektur kann _Clothopus_ flexibel in bestehende Systeme integriert oder zukünftig um weitere Kommunikationsschnittstellen erweitert werden.
+Durch diese Architektur kann das _Clothopus_-Backend flexibel in bestehende Systeme integriert oder zukünftig um weitere Kommunikationsschnittstellen erweitert werden.
 
-=== Data Analytics (Beteiligter C)
+=== Data Analytics
 
 Die erfassten Sensordaten werden auf der zentralen Steuereinheit verarbeitet und logisch miteinander verknüpft.  
-Hierbei erfolgt die eindeutige Zuordnung von Gewichtsmessungen zu den identifizierten Filamenten anhand der ausgelesenen NFC-Tag-Informationen.
+Hierbei erfolgt die eindeutige Zuordnung von Gewichtsmessungen zu den identifizierten Filamenten durch die softwareseitige Zusammenfassung von Wägezelle und NFC-Reader in einem Software-Stack.
 
-Eine Tara- und Kalibrierungsroutine stellt sicher, dass die Gewichtsmessung präzise und reproduzierbar erfolgt.  
-Diese Kalibrierung wird einmalig während der Einrichtung der Filamentstationen durchgeführt und softwareseitig unterstützt.
+Eine Kalibrierungsroutine bei der Ersteinrichtung der Stacks stellt sicher, dass die Gewichtsmessung präzise erfolgt. Hier für wird der Stack mit einem dem Nutzer bekannten Gewicht belastet.
+Aus dem Messwert der Wägezelle wird die Skalierung sowie Nullpunktverschiebung des Wägezellentreibers berechnet und gespeichert. Beim Neustart des Systems werden die entsprechenden Parameter geladen und eingestellt.
+Für eine erfolgreiche Kalibrierung wird der Nutzer mithilfe eines Wizards durch das Prozedere geführt.
 
 Neben der reinen Anzeige des aktuellen Filamentgewichts wird dieses zusätzlich in einem definierten Speicherbereich des NFC-Tags (Aux-Region) abgelegt.  
 Dadurch wird das Filament selbstzustandsbehaftet, da relevante Informationen direkt auf dem Tag gespeichert und unabhängig vom System wieder ausgelesen werden können.
 
-=== Aktoren und Ausgänge (Beteiligter D)
+=== Aktoren und Ausgänge
 
-Die Ausgabe der verarbeiteten Daten erfolgt vollständig softwareseitig über das Webinterface von OctoPrint.  
+Die Ausgabe der verarbeiteten Daten erfolgt vollständig softwareseitig über das Webinterface von OctoPrint.
 Dem Nutzer werden dort Informationen über das aktuell eingesetzte Filament sowie dessen verbleibendes Gewicht übersichtlich dargestellt.
 
 Zusätzlich zur Visualisierung stellt das System die Daten über eine Programmierschnittstelle bereit, sodass sie von weiteren Softwarekomponenten oder Erweiterungen genutzt werden können.  
 Physische Aktoren wie Anzeigen oder Signale sind im aktuellen Entwicklungsstand nicht vorgesehen, da der Fokus auf einer nahtlosen Integration in bestehende Druck-Workflows liegt.
 
-Ein besonderer technischer Schwerpunkt des Projekts liegt in der Entwicklung der NFC-Kommunikation.  
-Auf Basis eines bestehenden Open-Source-Treibers wurde durch das Projektteam eine vollständige Erweiterung um Lese- und Schreibfunktionen gemäß der offiziellen OpenPrintTag-Spezifikation implementiert.  
-Während der ursprüngliche Treiber lediglich einfache Inventory-Anfragen unterstützte, wurden sämtliche Datenblock-Operationen eigenständig entwickelt.
-
-Die Kommunikation mit dem PN5180 erfolgt dabei auf niedriger Abstraktionsebene durch den Versand selbst definierter Datenframes in hexadezimaler Form über die SPI-Schnittstelle.  
-Dies ermöglicht eine direkte, standardkonforme Interaktion mit den ISO-15693-Tags und stellt eine zentrale technische Eigenleistung des Projekts dar.
-
-== Organisation und Management
-== Menschen und Kultur
-== Business und Ökosystem
-Beschreibung des Business Cases inkl. Abschätzung von Kosten in der Serie, Preisen, Margen. Ideen zur Finanzierung eines Ramp-Ups. 
-
-#sym.arrow.r.double Die Nutzungs des Systems für Endverbraucher setzt zunächst den Erwerb der benötigten Hardwarekomponenten voraus. 
-Zusammen mit dem physischen Produkt stehen zunächst Basisfunktionen zur Verfügung. 
-Über ein Abonnement-Modell oder den einmalige Zahlung können in jeder Produktiteration erweiterte Features genutzt werden.
-
 == Service und Unterstützung
+
+_ClothoPus_ ist bewusst als Open-Source-System konzipiert. Sowohl die Softwarekomponenten als auch die Hardwareentwürfe sind offen zugänglich und dokumentiert. Dadurch wird es Dritten ermöglicht, das System nachzubauen, anzupassen und weiterzuentwickeln.
+
+Im Gegensatz zu klassischen, proprietären Smart-Systemen basiert das Unterstützungsmodell nicht primär auf einem zentralisierten Kundendienst, sondern auf einer kollaborativen Community-Struktur. Anwender und Entwickler können Fehlerberichte einreichen, Verbesserungsvorschläge diskutieren und eigene Erweiterungen beitragen. Dieser offene Entwicklungsansatz entspricht der in der 3D-Druck-Community etablierten Praxis und fördert Transparenz sowie Innovationsgeschwindigkeit.
+
+Die Offenlegung der Hard- und Software erlaubt es zudem, das System an individuelle Anforderungen anzupassen. Beispielsweise können alternative Sensoren integriert, zusätzliche Schnittstellen implementiert oder neue Visualisierungsfunktionen entwickelt werden. Auch mechanische Anpassungen lassen sich auf Basis der Konstruktionsdaten realisieren.
 
 #pagebreak()
 = Fazit und Ausblick
-Abgleich mit den initial beschriebenen Zielen
-Was muss passieren um ein kommerzielles Smart System vermarkten zu können?
+Das im Rahmen dieses Projekts entwickelte System _ClothoPus_ erfüllt die in der Zielsetzung formulierten Anforderungen.
+Es wurde ein integriertes Gesamtsystem realisiert, das Filamentrollen automatisiert wiegt, NFC-Tags eindeutig identifiziert und die gewonnenen Informationen innerhalb von OctoPrint bereitstellt.
+Sowohl die mechanische Auslegung der Filamentstationen als auch die elektronische und softwareseitige Integration konnten erfolgreich umgesetzt werden.
+Die Gewichtserfassung erfolgt kontinuierlich, die Identifikation der Filamente ist standardkonform implementiert, und die Visualisierung der Daten innerhalb der bestehenden Druckmanagementumgebung ermöglicht einen praxisnahen Einsatz.
+Damit wurde das zentrale Projektziel erreicht: die Automatisierung der Filamentverwaltung sowie die Reduktion manueller Mess- und Kontrollprozesse.
+Hinsichtlich einer möglichen Kommerzialisierung ist festzuhalten, dass _ClothoPus_ konzeptionell als Open-Source-Lösung gedacht ist.
+Die Software basiert auf OctoPrint, welches vollständig Open-Source entwickelt wird. Auch die Erweiterung in Form des Plugins folgt diesem Ansatz.
+Eine direkte Vermarktung als klassisches kommerzielles Produkt würde dem Open-Source-Grundgedanken entgegenstehen und müsste mit einer klar definierten Geschäftsstrategie verbunden werden.
+Mögliche Ansätze könnten beispielsweise Kooperationen mit Filamentherstellern sein. Denkbar wäre eine optionale Integration produktspezifischer Informationen innerhalb des Plugins oder eine Bestellfunktion bei niedrigem Filamentstand. In einem solchen Modell könnte eine provisionsbasierte Finanzierung erfolgen, ohne die Offenheit der Kernlösung einzuschränken.
+Ein weiterer wesentlicher Aspekt für eine nachhaltige Weiterentwicklung ist der Aufbau einer aktiven Community.
+Durch die Offenlegung von Hard- und Softwarekomponenten kann das System kontinuierlich verbessert, erweitert und an unterschiedliche Anwendungsfälle angepasst werden. Insbesondere im Umfeld des 3D-Drucks ist dieser kollaborative Entwicklungsansatz etabliert und fördert Innovationsgeschwindigkeit sowie Akzeptanz.
+Im aktuellen Entwicklungsstand ist das System funktional, jedoch noch nicht feature-complete.
+Die grafische Darstellung innerhalb von OctoPrint ist bewusst schlank gehalten und bietet Potenzial für Erweiterungen, beispielsweise durch ein digitales Filamentinventar, Verlaufsanalysen des Materialverbrauchs oder eine automatisierte Bestandsverwaltung über mehrere Drucker hinweg.
+Technisch besteht insbesondere im Bereich der Gewichtsmessung weiterer Optimierungsbedarf.
+Das beobachtete Kriechverhalten der Wägezellen unter Dauerbelastung beeinflusst die Langzeitstabilität der Messwerte. Zukünftige Verbesserungen können sowohl softwareseitig durch Kompensationsalgorithmen als auch hardwareseitig durch alternative Sensorkonzepte oder konstruktive Anpassungen erfolgen.
 
 

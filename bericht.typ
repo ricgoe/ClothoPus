@@ -131,17 +131,23 @@ Vor diesem Hintergrund ergibt sich der Bedarf nach einer automatisierten, zuverl
 Ziel des Projekts ist die Entwicklung eines integrierten Gesamtsystems zur automatisierten Verwaltung von 3D-Druck-Filamenten.  
 Das System soll Filamentrollen kontinuierlich wiegen, die zugehörigen NFC-Tags auslesen und die gewonnenen Informationen dem Nutzer innerhalb einer überscihtlichen Umgebung bereitstellen.
 
+\pagebreak()
 == Vorgehensweise
+Das Projekt wurde grundlegend in einen Hardware- und einen Softwareanteil gegliedert.
 
 Die Hardwarearchitektur umfasst bis zu fünf identische Filamentstationen sowie eine zentrale Steuereinheit.  
-Jede Filamentstation verfügt über eine Wägezelle zur Gewichtserfassung sowie einen NFC-Reader zur Identifikation des eingesetzten Materials.
+Jede Filamentstation integriert eine Wägezelle zur kontinuierlichen Gewichtserfassung sowie einen NFC-Reader zum Auslesen der eingesetzten Filamentrollen.
 
-Das Gesamtsystem aus Hardware und Software verfolgt das Ziel, manuelle Messprozesse vollständig zu ersetzen, Materialverwechslungen zu vermeiden und insbesondere bei Remote-Setups einen transparenten, zeiteffizienten Workflow zu ermöglichen.
+Bei den verwendeten NFC-Tags handelt es sich um sogenannte OpenPrintTags, die dem im November 2025 veröffentlichten OpenPrintTag-Standard entsprechen.  
+Dieser Standard definiert eine herstellerübergreifende Struktur zur digitalen Beschreibung von Filamentparametern auf Basis von ISO-15693 (NFC-V). Ziel ist es, Materialinformationen wie Typ, Farbe, empfohlene Druckparameter oder Chargenzuordnung direkt auf der Filamentrolle zu speichern und maschinell auslesbar zu machen.
 
+Der OpenPrintTag-Standard schafft damit die Grundlage für automatisierte Materialerkennung und digitale Materialbibliotheken. 
+Wie in der offiziellen Ankündigung beschrieben, eröffnen sich dadurch insbesondere für Druckfarmen und professionelle Anwendungen neue Möglichkeiten wie Echtzeit-Inventarverwaltung, Materialverfolgung und automatisierte Prozesssicherheit. Genau an diesem Punkt setzt _ClothoPus_ an und erweitert diesen Ansatz um eine kontinuierliche Gewichtserfassung.
 
+Die Softwarekomponente übernimmt die zyklische Erfassung der Sensordaten, die Zuordnung von Gewicht und Identität sowie die Visualisierung der Informationen innerhalb von OctoPrint.  
+Durch die direkte Integration in die bestehende Druckumgebung entsteht ein geschlossenes System, das Materialidentifikation und Bestandsüberwachung miteinander kombiniert.
 
-== Vorgehensweise
-Der Einsatz von Techniken aus dem Bereich der Radio-Frequency-Identification sowie unaufällig eingesetzen Wägezellen bieten eine elegante Lösung zur Filamentüberwachung. 
+Die Umsetzung erfolgte iterativ: Einzelne Komponenten wurden zunächst separat getestet und anschließend schrittweise zu einem funktionalen Gesamtsystem integriert.
 
 #pagebreak()
 = Projektmanagement
@@ -262,10 +268,17 @@ Durch die modulare Auslegung des Systems können bis zu fünf Stacks parallel in
 
   
 Der Raspberry Pi übernimmt die zyklische Abfrage der angeschlossenen Stacks, die Verarbeitung Sensordaten sowie die Zuordnung von Gewichtsmessungen zu den Filamentdaten.  
+#figure(
+ image("assets/Clotho_Clothobox.jpeg", width: 50%), caption: [Verkabelung innerhalb des zentralen Gehäuses inklusive des eigens entwickelten PiHats.]
+)<clothobox>
 
 Die Kommunikation zwischen den Stacks und der zentralen Steuereinheit erfolgt über einen Kabelanschluss.  
 Dieser dient sowohl der Spannungsversorgung der Sensorik als auch der Datenübertragung von Steuersignalen und Sensordaten, wie Messwerten der Wägezellen sowie Daten der NFC-Tags.
-Das Bündeln aller relevanten Signale erfolgt über eigens entwickelte Leiterplatten (PCBs) innerhalb der Stacks sowie auf der zentralen Steuereinheit (Ausführung als PiHat). Dies vereinfacht die mechanische Integration, den modularen Ausbau sowie Wartungsarbeiten.
+Das Bündeln aller relevanten Signale erfolgt über eigens entwickelte Leiterplatten (PCBs) innerhalb der Stacks (@stack-underside) sowie auf der zentralen Steuereinheit (Ausführung als PiHat (@clothobox)). Dies vereinfacht die mechanische Integration, den modularen Ausbau sowie Wartungsarbeiten.
+
+#figure(
+ image("assets/Clotho_Stacks_underside.jpeg"), caption: [Ansicht auf die kompakte Integration der Wägezellen und NFC-Reader-Verkabelung.]
+)<stack-underside>
 
 Zur externen Vernetzung ist der Raspberry Pi 4 über WLAN oder Ethernet in das lokale Netzwerk des Nutzers eingebunden.  
 Auf dem Raspberry Pi wird OctoPrint ausgeführt, sodass die Filamentdaten lokal durch über das Clothopus-Plugin zur Verfügung gestellt werden.
@@ -318,9 +331,13 @@ Dadurch wird das Filament selbstzustandsbehaftet, da relevante Informationen dir
 === Aktoren und Ausgänge
 
 Die Ausgabe der verarbeiteten Daten erfolgt vollständig softwareseitig über das Webinterface von OctoPrint.
-Dem Nutzer werden dort Informationen über das aktuell eingesetzte Filament sowie dessen verbleibendes Gewicht übersichtlich dargestellt.
+Dem Nutzer werden dort Informationen über das aktuell eingesetzte Filament sowie dessen verbleibendes Gewicht übersichtlich dargestellt (@filament-view).
 
-Zusätzlich zur Visualisierung stellt das System die Daten über eine Programmierschnittstelle bereit, sodass sie von weiteren Softwarekomponenten oder Erweiterungen genutzt werden können.  
+#figure(
+ image("assets/Clotho_filament_view.png"), caption: [Darstellung des aktuellen Filamentinventars in OctoPrint.]
+)<filament-view>
+
+Zusätzlich zur Visualisierung stellt das System die Daten über eine Programmierschnittstelle (REST-API) bereit, sodass sie von weiteren Softwarekomponenten oder Erweiterungen genutzt werden können.  
 Physische Aktoren wie Anzeigen oder Signale sind im aktuellen Entwicklungsstand nicht vorgesehen, da der Fokus auf einer nahtlosen Integration in bestehende Druck-Workflows liegt.
 
 == Service und Unterstützung
@@ -346,7 +363,11 @@ Ein weiterer wesentlicher Aspekt für eine nachhaltige Weiterentwicklung ist der
 Durch die Offenlegung von Hard- und Softwarekomponenten kann das System kontinuierlich verbessert, erweitert und an unterschiedliche Anwendungsfälle angepasst werden. Insbesondere im Umfeld des 3D-Drucks ist dieser kollaborative Entwicklungsansatz etabliert und fördert Innovationsgeschwindigkeit sowie Akzeptanz.
 Im aktuellen Entwicklungsstand ist das System funktional, jedoch noch nicht feature-complete.
 Die grafische Darstellung innerhalb von OctoPrint ist bewusst schlank gehalten und bietet Potenzial für Erweiterungen, beispielsweise durch ein digitales Filamentinventar, Verlaufsanalysen des Materialverbrauchs oder eine automatisierte Bestandsverwaltung über mehrere Drucker hinweg.
-Technisch besteht insbesondere im Bereich der Gewichtsmessung weiterer Optimierungsbedarf.
-Das beobachtete Kriechverhalten der Wägezellen unter Dauerbelastung beeinflusst die Langzeitstabilität der Messwerte. Zukünftige Verbesserungen können sowohl softwareseitig durch Kompensationsalgorithmen als auch hardwareseitig durch alternative Sensorkonzepte oder konstruktive Anpassungen erfolgen.
+Insbesondere die Realisierung eines digitalen Filamentinventars würde eine weiterführende Anpassung der Systemarchitektur erfordern.  
+Die derzeitige kabelgebundene Anbindung der Filamentstationen an die zentrale Steuereinheit begrenzt sowohl die räumliche Flexibilität als auch die Anzahl integrierbarer Stacks.
+Eine zukünftige Ausbaustufe könnte daher auf funkbasierte Mikrocontroller innerhalb der einzelnen Filamentstationen setzen, beispielsweise auf Basis eines ESP32.  
+Jeder Stack würde Sensordaten eigenständig erfassen und drahtlos an eine zentrale Instanz übertragen. Dadurch ließe sich die physikalische Verkabelung eliminieren und das System nahezu beliebig skalieren.
+Eine solche dezentrale, funkbasierte Architektur würde _ClothoPus_ von einem lokal gebundenen Messsystem zu einer skalierbaren, verteilten Smart-Inventory-Lösung weiterentwickeln und die Grundlage für ein umfassendes, netzwerkbasiertes Filamentmanagement schaffen.
+
 
 

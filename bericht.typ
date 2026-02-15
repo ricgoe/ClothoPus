@@ -138,11 +138,11 @@ Das Projekt wurde grundlegend in einen Hardware- und einen Softwareanteil geglie
 Die Hardwarearchitektur umfasst bis zu fünf identische Filamentstationen sowie eine zentrale Steuereinheit.  
 Jede Filamentstation integriert eine Wägezelle zur kontinuierlichen Gewichtserfassung sowie einen NFC-Reader zum Auslesen der eingesetzten Filamentrollen.
 
-Bei den verwendeten NFC-Tags handelt es sich um sogenannte OpenPrintTags, die dem im November 2025 veröffentlichten OpenPrintTag-Standard entsprechen.  
+Bei den verwendeten NFC-Tags handelt es sich um sogenannte OpenPrintTags, die dem im November 2025 veröffentlichten OpenPrintTag-Standard entsprechen @prusa_openprinttag_blog.  
 Dieser Standard definiert eine herstellerübergreifende Struktur zur digitalen Beschreibung von Filamentparametern auf Basis von ISO-15693 (NFC-V). Ziel ist es, Materialinformationen wie Typ, Farbe, empfohlene Druckparameter oder Chargenzuordnung direkt auf der Filamentrolle zu speichern und maschinell auslesbar zu machen.
 
 Der OpenPrintTag-Standard schafft damit die Grundlage für automatisierte Materialerkennung und digitale Materialbibliotheken. 
-Wie in der offiziellen Ankündigung beschrieben, eröffnen sich dadurch insbesondere für Druckfarmen und professionelle Anwendungen neue Möglichkeiten wie Echtzeit-Inventarverwaltung, Materialverfolgung und automatisierte Prozesssicherheit. Genau an diesem Punkt setzt _ClothoPus_ an und erweitert diesen Ansatz um eine kontinuierliche Gewichtserfassung.
+Wie in der offiziellen Ankündigung beschrieben, eröffnen sich dadurch insbesondere für Druckfarmen und professionelle Anwendungen neue Möglichkeiten wie Echtzeit-Inventarverwaltung, Materialverfolgung und automatisierte Prozesssicherheit @prusa_openprinttag_blog. Genau an diesem Punkt setzt _ClothoPus_ an und erweitert diesen Ansatz um eine kontinuierliche Gewichtserfassung.
 
 Die Softwarekomponente übernimmt die zyklische Erfassung der Sensordaten, die Zuordnung von Gewicht und Identität sowie die Visualisierung der Informationen innerhalb von OctoPrint.  
 Durch die direkte Integration in die bestehende Druckumgebung entsteht ein geschlossenes System, das Materialidentifikation und Bestandsüberwachung miteinander kombiniert.
@@ -295,10 +295,10 @@ Der HX711 stellt die gemessenen Gewichtswerte über eine taktgesteuerte Schnitts
 Zum Auslesen der NFC-Tags und somit zur Identifikation der Filamente wird ein NFC-Reader des Typs PN5180 verwendet.  
 Dieser unterstützt mehrere NFC-Standards, wobei im Rahmen des Projekts gezielt der ISO-15693-Standard (NFC-V) genutzt wird, da dieser den Spezifikationen des OpenPrintTag-Standards entspricht.  
 Über den NFC-Reader werden sowohl Identifikations- als auch sämtliche Nutzdaten der Filamenttags erfasst.\
-Auf Basis eines bestehenden Open-Source-Treibers wurde eine vollständige Erweiterung implementiert.
+Auf Basis eines bestehenden Open-Source-Treibers @pn5180pi_pypi wurde eine vollständige Erweiterung implementiert.
 Während der ursprüngliche Treiber lediglich grundlegende Inventory-Anfragen, wie beispielsweise das Auslesen der UUID, unterstützte, wurden sämtliche Lese- und Schreiboperationen zur standardkonformen Verarbeitung der auf dem NFC-Tag gespeicherten Datenblöcke gemäß der ISO15693-Spezifikation eigenständig entwickelt.
 
-Die Kommunikation mit dem PN5180 erfolgt dabei auf niedriger Abstraktionsebene durch den Versand hersteller[Quelle]- und normdefinierter[Quelle] Datenframes in hexadezimaler Form über die SPI-Schnittstelle des Raspberry Pi.  
+Die Kommunikation mit dem PN5180 erfolgt dabei auf niedriger Abstraktionsebene durch den Versand hersteller @nxp_pn5180_datasheet und normdefinierter @st_lri512_datasheet Datenframes in hexadezimaler Form über die SPI-Schnittstelle des Raspberry Pi.  
 Diese Vervollständigung des Treibers stellt eine zentrale technische Eigenleistung des Projekts dar.
 
 
@@ -306,7 +306,7 @@ Die Kombination aus Gewichtsmessung und eindeutiger Filamentidentifikation bilde
 
 === Connectivity
 
-Die Anbindung der Filament-Stacks an die zentrale Steuereinheit erfolgt über ein proprietäres 11-Pin-Kommunikationssystem.  
+Die Anbindung der Filament-Stacks an die zentrale Steuereinheit erfolgt über eine 12-adrige-Leitung. Als physicher Anschluss dient ein SUB-D-Stecker, wobei nur 11 der 15 verfügabren Pins belegt sind.
 Über diese Verbindung werden sowohl die Spannungsversorgung als auch die Datenübertragung realisiert.
 
 Die Kommunikation mit dem PN5180-NFC-Reader erfolgt über eine SPI-Schnittstelle, über die Steuer- und Nutzdaten ausgetauscht werden.  

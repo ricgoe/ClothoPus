@@ -115,14 +115,14 @@ Aus der Kombination beider Begriffe entstand die Bezeichnung „ClothoPus“.
 
 == Motivation
 
-Im Bereich der privaten Nutzung von 3D-Druck-Techniken, insbesondere Fused Deposition Modelling (FDM) und Fused Layer Modelling (FLM), stellt Filament das zentrale Fertigungsmaterial dar.  
-Ein wiederkehrendes Problem sowohl in der eigenen praktischen Arbeit als auch innerhalb der Community ist die regelmäßige und umständliche Überprüfung des verfügbaren Filamentbestands.
+Im Bereich der privaten Nutzung von 3D-Druck-Techniken, insbesondere Fused Deposition Modelling (FDM) und Fused Layer Modelling (FLM), stellt Filament das zentrale Fertigungsmaterial dar @1FilamentGrundlage.  
+Ein wiederkehrendes Problem sowohl in der eigenen praktischen Arbeit als auch innerhalb der Community ist die regelmäßige und umständliche Überprüfung des verfügbaren Filamentbestands @2ProblemeBestandCheck.
 
-Die Bestimmung der Restmenge erfordert typischerweise das Entnehmen der Filamentrolle aus dem Drucker, eine separate Gewichtsmessung sowie die manuelle Subtraktion des Eigengewichts der Spule. Anschließend muss das Filament erneut montiert und korrekt eingeführt werden.  
+Die Bestimmung der Restmenge erfordert typischerweise das Entnehmen der Filamentrolle aus dem Drucker, eine separate Gewichtsmessung sowie die manuelle Subtraktion des Eigengewichts der Spule. Anschließend muss das Filament erneut montiert und korrekt eingeführt werden @3GewichtGrundlage.
 Insbesondere bei Druckvorgängen mit mehreren Materialwechseln oder bei der Nutzung mehrerer Drucker entsteht hierdurch ein erheblicher Zeitaufwand.
 
-Mit der zunehmenden Verbreitung kostengünstiger 3D-Drucksysteme wächst auch die Anzahl der Anwender kontinuierlich. Parallel dazu steigt der Anspruch an Effizienz, Automatisierung und Remote-Fähigkeit der eingesetzten Systeme.  
-Eine fehlende Transparenz über eingesetzte Materialien und verbleibende Restmengen kann dabei nicht nur zu abgebrochenen Druckaufträgen führen, sondern im ungünstigsten Fall auch zu Materialverwechslungen und daraus resultierenden Hardwareproblemen.
+Mit der zunehmenden Verbreitung kostengünstiger 3D-Drucksysteme wächst auch die Anzahl der Anwender kontinuierlich. Parallel dazu steigt der Anspruch an Effizienz, Automatisierung und Remote-Fähigkeit der eingesetzten Systeme @4Anforderungen.  
+Eine fehlende Transparenz über eingesetzte Materialien und verbleibende Restmengen kann dabei nicht nur zu abgebrochenen Druckaufträgen führen, sondern im ungünstigsten Fall auch zu Materialverwechslungen und daraus resultierenden Hardwareproblemen @5ProblemeWennNicht.
 
 Vor diesem Hintergrund ergibt sich der Bedarf nach einer automatisierten, zuverlässigen und in bestehende Workflows integrierbaren Lösung zur Filamentverwaltung.
 
@@ -371,3 +371,18 @@ Eine solche dezentrale, funkbasierte Architektur würde _ClothoPus_ von einem lo
 
 
 
+// Literaturverzeichnis
+#pagebreak()
+#show link: set text(hyphenate: true)
+#bibliography(
+  "literatur.bib",
+  title: "Literaturverzeichnis",
+  style: "ieee"
+)
+#pagebreak()
+
+#outline(
+  title: "Abbildungsverzeichnis", 
+  target: figure.where(kind: image),
+  indent: 1.5em
+)

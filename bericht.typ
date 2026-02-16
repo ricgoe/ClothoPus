@@ -91,6 +91,14 @@ Aus der Kombination beider Begriffe entstand die Bezeichnung „ClothoPus“.
   title: "Inhaltsverzeichnis", 
   indent: 1.5em
 )
+
+#pagebreak()
+
+#outline(
+  title: "Abbildungsverzeichnis", 
+  target: figure.where(kind: image),
+  indent: 1.5em
+)
 #pagebreak()
 
 = Einleitung
@@ -128,18 +136,18 @@ Vor diesem Hintergrund ergibt sich der Bedarf nach einer automatisierten, zuverl
 
 == Zielsetzung
 
-Ziel des Projekts ist die Entwicklung eines integrierten Gesamtsystems zur automatisierten Verwaltung von 3D-Druck-Filamenten.  
+Ziel des Projekts war die Entwicklung eines integrierten Gesamtsystems zur automatisierten Verwaltung von 3D-Druck-Filamenten.  
 Das System soll Filamentrollen kontinuierlich wiegen, die zugehörigen NFC-Tags auslesen und die gewonnenen Informationen dem Nutzer innerhalb einer überscihtlichen Umgebung bereitstellen.
 
-\pagebreak()
+#pagebreak()
 == Vorgehensweise
 Das Projekt wurde grundlegend in einen Hardware- und einen Softwareanteil gegliedert.
 
 Die Hardwarearchitektur umfasst bis zu fünf identische Filamentstationen sowie eine zentrale Steuereinheit.  
 Jede Filamentstation integriert eine Wägezelle zur kontinuierlichen Gewichtserfassung sowie einen NFC-Reader zum Auslesen der eingesetzten Filamentrollen.
 
-Bei den verwendeten NFC-Tags handelt es sich um sogenannte OpenPrintTags, die dem im November 2025 veröffentlichten OpenPrintTag-Standard entsprechen @prusa_openprinttag_blog.  
-Dieser Standard definiert eine herstellerübergreifende Struktur zur digitalen Beschreibung von Filamentparametern auf Basis von ISO-15693 (NFC-V). Ziel ist es, Materialinformationen wie Typ, Farbe, empfohlene Druckparameter oder Chargenzuordnung direkt auf der Filamentrolle zu speichern und maschinell auslesbar zu machen.
+Bei den verwendeten NFC-Tags handelt es sich um sogenannte OpenPrintTags, die dem im November 2025 veröffentlichten OpenPrintTag-Standard entsprechen.  
+Dieser Standard definiert eine herstellerübergreifende Struktur zur digitalen Beschreibung von Filamentparametern auf Basis von ISO-15693 (NFC-V). Ziel ist es, Materialinformationen wie Typ, Farbe, empfohlene Druckparameter oder Chargenzuordnung direkt auf der Filamentrolle zu speichern und maschinell auslesbar zu machen @prusa_openprinttag_blog @openprinttag_org.
 
 Der OpenPrintTag-Standard schafft damit die Grundlage für automatisierte Materialerkennung und digitale Materialbibliotheken. 
 Wie in der offiziellen Ankündigung beschrieben, eröffnen sich dadurch insbesondere für Druckfarmen und professionelle Anwendungen neue Möglichkeiten wie Echtzeit-Inventarverwaltung, Materialverfolgung und automatisierte Prozesssicherheit @prusa_openprinttag_blog. Genau an diesem Punkt setzt _ClothoPus_ an und erweitert diesen Ansatz um eine kontinuierliche Gewichtserfassung.
@@ -159,14 +167,14 @@ Auf oberster Ebene wurde das Projekt in die fünf Hauptphasen der Anforderungsan
 
 Diese phasenorientierte Gliederung wurde durch eine komponentenorientierte Struktur ergänzt. 
 Dadurch konnten sowohl zeitliche als auch funktionale Abhängigkeiten systematisch berücksichtigt werden.
-Im Bereich der Hardwareentwicklung umfassten die Arbeitspakete unter anderem die jeweilige Integration von Wägezellen und NFC-Readern, die Entwicklung des 11-Pin-Kommunikationssystems sowie die mechanische Integration der Filament-Stacks.
+Im Bereich der Hardwareentwicklung umfassten die Arbeitspakete unter anderem die jeweilige Integration von Wägezellen und NFC-Readern, die Entwicklung des kabelgebundenen Kommunikationssystems inklusive der Entwicklung von Leiterplatten sowie die mechanische Integration der Filament-Stacks.
 
 Die Softwareentwicklung gliederte sich sechsstufig in die Teilbereiche Implementierung der Sensordatenerfassung, Entwicklung der SPI-Kommunikation, ISO-15693 gemäße Implementierung der NFC-Kommunikation, Erweiterung des PN5180-Treibers um Lese- und Schreibfunktionen, Entwicklung der REST-Schnittstelle und Integration in das OctoPrint-Plugin.
 
 Die Zerlegung erfolgte bis auf die Ebene funktionaler Module, sodass klar abgegrenzte, testbare Einheiten entstanden.
 
 Als Meilensteine wurden technische Funktionsnachweise definiert. 
-Diese umfassen die erfolgreiche Gewichtsmessung eines Stacks, eine stabile NFC-Kommunikation, die Implementierung vollständiger Lese- und Schreiboperationen gemäß OpenPrintTag-Spezifikation, die Visualisierung der ermittelten Daten innerhalb des OctoPrint-Plugins und schließlich die vollständige Systemintegration aller Komponenten.
+Diese umfassten die erfolgreiche Gewichtsmessung eines Stacks, eine stabile NFC-Kommunikation, die Implementierung vollständiger Lese- und Schreiboperationen gemäß OpenPrintTag-Spezifikation, die Visualisierung der ermittelten Daten innerhalb des OctoPrint-Plugins und schließlich die vollständige Systemintegration aller Komponenten.
 
 Diese Struktur ermöglichte eine transparente Fortschrittskontrolle und eine zielgerichtete Umsetzung des Systems.
 
@@ -195,7 +203,7 @@ Regelmäßige Abstimmungsmeetings fanden durchschnittlich viermal pro Woche stat
 Das Projekt begann im Oktober 2025 und wurde im Januar 2026 abgeschlossen.
 
 Die zeitliche Planung orientierte sich an den definierten Hauptphasen der WBS.  
-Eine iterative Detailplanung erfolgte fortlaufend über das Kanban-System, wodurch flexibel auf neue Erkenntnisse reagiert werden konnte.
+Eine iterative Detailplanung erfolgte fortlaufend über das Kanban-Board, wodurch flexibel auf neue Erkenntnisse reagiert werden konnte.
 
 Während der Umsetzung traten mehrere technische Herausforderungen auf, die Einfluss auf den Projektverlauf hatten.  
 Zentrale Problemstellen waren hardwareseitig unter anderem die Beschaffung inkompatibler NFC-Reader (ISO-14443 statt ISO-15693), Timing-Probleme innerhalb der SPI-Kommunikation und Kriechverhalten der Wägezellen unter Dauerlast.
@@ -208,26 +216,24 @@ Die strategische Entscheidung, zunächst eine stabile Integration mit OctoPrint 
 
 == Vorgehensmodell in der Entwicklung
 
-Die Projektumsetzung folgte einem hybriden Vorgehensmodell.  
-
+Die Projektumsetzung folgte einem hybriden Vorgehensmodell. 
 Auf Makroebene wurde eine phasenorientierte Struktur gewählt, die sich in die Bereiche Analyse, Konzept, Hardware, Software und Integration unterteilte.  
 Auf Mikroebene erfolgte die Umsetzung agil und inkrementell.
 
-Die Steuerung der Entwicklung basierte auf einem Kanban-System mit priorisierten Aufgaben.  
+Die Steuerung der Entwicklung basierte auf einem Kanban-Board mit priorisierten Aufgaben.  
 Neue Funktionalitäten wurden eigenständig in Feature-Branches entwickelt und nach erfolgreichem Test in gemeinsamen Integrationsschritten zusammengeführt. 
 Insgesamt wurden drei zentrale Integrationspunkte definiert, auf denen jeweils weiterführende Funktionen aufbauten.
 
 Testing erfolgte kontinuierlich während der Entwicklung sowie verpflichtend vor jedem Merge-Vorgang.  
 Ein erheblicher Teil der Implementierung wurde im Pair-Programming durchgeführt, wodurch eine implizite Qualitätssicherung gewährleistet wurde.
 
-Formale Sprintzyklen wurden nicht dauerhaft etabliert; in kritischen Projektphasen wurden jedoch gezielt in intensiven Entwicklungsintervallen gearbeitet, um Verzögerungen aufzuholen und gesamtheitlichen Projektfortschritt im notwendigen Zeitrahmen sichern zu können.
+Formale Sprintzyklen wurden nicht dauerhaft etabliert. In kritischen Projektphasen wurden jedoch gezielt in intensiven Entwicklungsintervallen gearbeitet, um Verzögerungen aufzuholen und gesamtheitlichen Projektfortschritt im notwendigen Zeitrahmen sichern zu können.
 
 Die größte Herausforderung bestand in der Bewältigung unvorhergesehener technischer Probleme, insbesondere im Bereich der Low-Level-Kommunikation.  
 
 Positiv hervorzuheben ist die hohe Reaktionsfähigkeit des Teams. 
-Durch konsensorientierte Entscheidungsfindung und kurze Kommunikationswege konnten kritische Situationen schnell analysiert und nachhaltig gelöst werden.
+Durch konsensorientierte Entscheidungsfindung und kurze Kommunikationswege konnten kritische Situationen schnell analysiert und gelöst werden.
 
-Für zukünftige Projekte empfiehlt sich die explizite Einplanung zusätzlicher Zeitpuffer sowie eine frühzeitige technische Risikoanalyse zur weiteren Optimierung des Projektmanagements.
 
 
 #pagebreak()
@@ -277,7 +283,7 @@ Dieser unterstützt mehrere NFC-Standards, wobei im Rahmen des Projekts gezielt 
 Auf Basis eines bestehenden Open-Source-Treibers @pn5180pi_pypi wurde eine vollständige Erweiterung implementiert.
 Während der ursprüngliche Treiber lediglich grundlegende Inventory-Anfragen, wie beispielsweise das Auslesen der UUID, unterstützte, wurden sämtliche Lese- und Schreiboperationen zur standardkonformen Verarbeitung der auf dem NFC-Tag gespeicherten Datenblöcke gemäß der ISO15693-Spezifikation eigenständig entwickelt.
 
-Die Kommunikation mit dem PN5180 erfolgt dabei auf niedriger Abstraktionsebene durch den Versand hersteller @nxp_pn5180_datasheet und normdefinierter @st_lri512_datasheet Datenframes in hexadezimaler Form über die SPI-Schnittstelle des Raspberry Pi.  
+Die Kommunikation mit dem PN5180 erfolgt dabei auf niedriger Abstraktionsebene durch den Versand hersteller- @nxp_pn5180_datasheet und normdefinierter @st_lri512_datasheet Datenframes in hexadezimaler Form über die SPI-Schnittstelle des Raspberry Pi.  
 Diese Vervollständigung des Treibers stellt eine zentrale technische Eigenleistung des Projekts dar.
 
 
@@ -285,7 +291,7 @@ Die Kombination aus Gewichtsmessung und eindeutiger Filamentidentifikation bilde
 
 === Connectivity
 
-Die Anbindung der Filament-Stacks an die zentrale Steuereinheit erfolgt über eine 12-adrige-Leitung. Als physicher Anschluss dient ein SUB-D-Stecker, wobei nur 11 der 15 verfügabren Pins belegt sind.
+Die Anbindung der Filament-Stacks an die zentrale Steuereinheit erfolgt über eine 12-adrige-Leitung. Als physischer Anschluss dient ein SUB-D-Stecker, wobei nur 11 der 15 verfügabren Pins belegt sind.
 Über diese Verbindung werden sowohl die Spannungsversorgung als auch die Datenübertragung realisiert.
 
 Die Kommunikation mit dem PN5180-NFC-Reader erfolgt über eine SPI-Schnittstelle, über die Steuer- und Nutzdaten ausgetauscht werden.  
@@ -298,14 +304,14 @@ Durch diese Architektur kann das _Clothopus_-Backend flexibel in bestehende Syst
 === Data Analytics
 
 Die erfassten Sensordaten werden auf der zentralen Steuereinheit verarbeitet und logisch miteinander verknüpft.  
-Hierbei erfolgt die eindeutige Zuordnung von Gewichtsmessungen zu den identifizierten Filamenten durch die softwareseitige Zusammenfassung von Wägezelle und NFC-Reader in einem Software-Stack.
+Hierbei erfolgt die eindeutige Zuordnung von Gewichtsmessungen zu den identifizierten Filamenten durch die softwareseitige Zusammenfassung von Wägezelle und NFC-Reader in einem "Software-Stack".
 
-Eine Kalibrierungsroutine bei der Ersteinrichtung der Stacks stellt sicher, dass die Gewichtsmessung präzise erfolgt. Hier für wird der Stack mit einem dem Nutzer bekannten Gewicht belastet.
+Eine Kalibrierungsroutine bei der Ersteinrichtung der Stacks stellt sicher, dass die Gewichtsmessung präzise erfolgt. Hierfür wird der Stack mit einem dem Nutzer bekannten Gewicht belastet.
 Aus dem Messwert der Wägezelle wird die Skalierung sowie Nullpunktverschiebung des Wägezellentreibers berechnet und gespeichert. Beim Neustart des Systems werden die entsprechenden Parameter geladen und eingestellt.
 Für eine erfolgreiche Kalibrierung wird der Nutzer mithilfe eines Wizards durch das Prozedere geführt.
 
 Neben der reinen Anzeige des aktuellen Filamentgewichts wird dieses zusätzlich in einem definierten Speicherbereich des NFC-Tags (Aux-Region) abgelegt.  
-Dadurch wird das Filament selbstzustandsbehaftet, da relevante Informationen direkt auf dem Tag gespeichert und unabhängig vom System wieder ausgelesen werden können.
+Dadurch trägt die Filamentrolle selbst die relevanten Zustandsinformationen, die unabhängig vom System erneut ausgelesen werden können.
 
 === Aktoren und Ausgänge
 
@@ -330,9 +336,9 @@ Die Offenlegung der Hard- und Software erlaubt es zudem, das System an individue
 #pagebreak()
 = Fazit und Ausblick
 Das im Rahmen dieses Projekts entwickelte System _ClothoPus_ erfüllt die in der Zielsetzung formulierten Anforderungen.
-Es wurde ein integriertes Gesamtsystem realisiert, das Filamentrollen automatisiert wiegt, NFC-Tags eindeutig identifiziert und die gewonnenen Informationen innerhalb von OctoPrint bereitstellt.
+Es wurde ein integriertes Gesamtsystem realisiert, das Filamentrollen automatisiert wiegt, Informationen auf NFC-Tags ausliest und diese innerhalb von OctoPrint bereitstellt.
 Sowohl die mechanische Auslegung der Filamentstationen als auch die elektronische und softwareseitige Integration konnten erfolgreich umgesetzt werden.
-Die Gewichtserfassung erfolgt kontinuierlich, die Identifikation der Filamente ist standardkonform implementiert, und die Visualisierung der Daten innerhalb der bestehenden Druckmanagementumgebung ermöglicht einen praxisnahen Einsatz.
+Die Gewichtserfassung erfolgt kontinuierlich, das Auslesen der Filamente ist standardkonform implementiert und die Visualisierung der Daten innerhalb der bestehenden Druckmanagementumgebung ermöglicht einen praxisnahen Einsatz.
 Damit wurde das zentrale Projektziel erreicht: die Automatisierung der Filamentverwaltung sowie die Reduktion manueller Mess- und Kontrollprozesse.
 Hinsichtlich einer möglichen Kommerzialisierung ist festzuhalten, dass _ClothoPus_ konzeptionell als Open-Source-Lösung gedacht ist.
 Die Software basiert auf OctoPrint, welches vollständig Open-Source entwickelt wird. Auch die Erweiterung in Form des Plugins folgt diesem Ansatz.
@@ -345,7 +351,7 @@ Die grafische Darstellung innerhalb von OctoPrint ist bewusst schlank gehalten u
 Insbesondere die Realisierung eines digitalen Filamentinventars würde eine weiterführende Anpassung der Systemarchitektur erfordern.  
 Die derzeitige kabelgebundene Anbindung der Filamentstationen an die zentrale Steuereinheit begrenzt sowohl die räumliche Flexibilität als auch die Anzahl integrierbarer Stacks.
 Eine zukünftige Ausbaustufe könnte daher auf funkbasierte Mikrocontroller innerhalb der einzelnen Filamentstationen setzen, beispielsweise auf Basis eines ESP32.  
-Jeder Stack würde Sensordaten eigenständig erfassen und drahtlos an eine zentrale Instanz übertragen. Dadurch ließe sich die physikalische Verkabelung eliminieren und das System nahezu beliebig skalieren.
+Jeder Stack würde Sensordaten eigenständig erfassen und drahtlos an die zentrale Instanz übertragen. Dadurch ließe sich die physikalische Verkabelung eliminieren und das System nahezu beliebig skalieren.
 Eine solche dezentrale, funkbasierte Architektur würde _ClothoPus_ von einem lokal gebundenen Messsystem zu einer skalierbaren, verteilten Smart-Inventory-Lösung weiterentwickeln und die Grundlage für ein umfassendes, netzwerkbasiertes Filamentmanagement schaffen.
 
 
@@ -357,11 +363,4 @@ Eine solche dezentrale, funkbasierte Architektur würde _ClothoPus_ von einem lo
   "literatur.bib",
   title: "Literaturverzeichnis",
   style: "ieee"
-)
-#pagebreak()
-
-#outline(
-  title: "Abbildungsverzeichnis", 
-  target: figure.where(kind: image),
-  indent: 1.5em
 )

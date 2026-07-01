@@ -1,57 +1,21 @@
 <h3>Clothopus Configuration</h3>
-<button class="btn btn-info" data-bind="click: startWizard">
-  Setup Scales
-</button>
-
 
 <table class="table table-striped table-bordered table-condensed">
   <thead>
     <tr>
-      <th style="width: 21%">Name</th>
-      <th style="width: 8%">NSS</th>
-      <th style="width: 8%">BUSY</th>
-      <th style="width: 8%">RESET</th>
-      <th style="width: 8%">SPI</th>
-      <th style="width: 13%">BAUD</th>
-      <th style="width: 8%">DOUT</th>
-      <th style="width: 8%">PD_SCK</th>
-      <th style="width: 10%">GAIN</th>
-      <th style="width: 8%"></th>
+      <th style="width: 45%">MAC</th>
+      <th style="width: 45%">IP</th>
+      <th style="width: 10%"></th>
     </tr>
   </thead>
 
-<tbody data-bind="foreach: stacksArray">
-  <tr>
+  <tbody data-bind="foreach: stacksArray">
+    <tr>
       <td>
-        <input type="text" class="form-control input-sm" data-bind="value: data.name">
+        <input type="text" class="form-control input-sm" data-bind="value: mac" readonly>
       </td>
       <td>
-        <input type="number" class="form-control input-sm" data-bind="value: data.nfc.nss">
-      </td>
-      <td>
-        <input type="number" class="form-control input-sm" data-bind="value: data.nfc.busy">
-      </td>
-      <td>
-        <input type="number" class="form-control input-sm" data-bind="value: data.nfc.reset">
-      </td>
-      <td>
-        <input type="number" class="form-control input-sm" data-bind="value: data.nfc.spi_channel">
-      </td>
-      <td>
-        <input type="number" class="form-control input-sm" data-bind="value: data.nfc.baud">
-      </td>
-      <td>
-        <input type="number" class="form-control input-sm" data-bind="value: data.scale.pins.dout">
-      </td>
-      <td>
-        <input type="number" class="form-control input-sm" data-bind="value: data.scale.pins.pd_sck">
-      </td>
-      <td>
-          <select class="form-control input-sm" data-bind="value: data.scale.pins.gain">
-            <option value="128">128</option>
-            <option value="64">64</option>
-            <option value="32">32</option>
-          </select>
+        <input type="text" class="form-control input-sm" data-bind="value: ip" readonly>
       </td>
       <td>
         <button type="button"
@@ -63,3 +27,7 @@
     </tr>
   </tbody>
 </table>
+
+<button class="btn btn-info" data-bind="click: startESPWizard">
+  Search stacks in network
+</button>

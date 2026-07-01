@@ -5,151 +5,29 @@ $(function() {
         self.stacksArray = ko.observableArray();
         self._filamentPollTimer = null;
         self._filamentPollMs = 15000
-        self.currentEmptyStacks = ko.observableArray();
-        self.wizard = {
-            _curr_id: null,
+        self.filamentRows = ko.observableArray([]);
+        self.aliveDevices = ko.observableArray([]);
+        self.currentEmptyStacks = ko.observableArray([]);
 
-            step: ko.observable(1),
-            name: ko.observable("N"),
-            scale: { dout: ko.observable(""), pd_sck: ko.observable(""), gain: ko.observable(128) },
-            nfc: {
-                nss: ko.observable(""),
-                busy: ko.observable(""),
-                reset: ko.observable(""),
-                baud: ko.observable(115200),
-                spi_channel: ko.observable(0)
-            },
-
-            knownWeight: ko.observable(""),
-            result: ko.observable({}),
-
-            initializeScale: function() {
-                const ID = Date.now().toString();
-                OctoPrint.simpleApiCommand("clothopus", "initialize_scale", {
-                    stack_id: ID,
-                    name: self.wizard.name(),
-                    pins: ko.toJS(self.wizard.scale)
-                }).done(function(resp) {
-                    if (resp.success) {
-                        self.wizard._curr_id = ID;
-                        self.wizard.step(2);
+        self.refreshAliveDevices = function () {
+            console.log("Refreshing alive devices");
+            OctoPrint.simpleApiCommand("clothopus", "alive_devices", {})
+                .done(function (response) {
+                    if (response.success) {
+                        self.aliveDevices(response.devices || []);
                     } else {
-                        new PNotify({
-                            title: "Scale Error",
-                            text: resp.error || "Unknown error",
-                            type: "error"
-                        });
+                        self.aliveDevices([]);
                     }
+                })
+                .fail(function () {
+                    self.aliveDevices([]);
                 });
-            },
-
-            calibrateScale: function() {
-                OctoPrint.simpleApiCommand("clothopus", "calibrate_scale", {
-                    stack_id: self.wizard._curr_id,
-                    known_weight: self.wizard.knownWeight()
-                }).done(function(resp) {
-                    if (resp.success !== false) {
-                        self.wizard.result(resp);
-                        self.wizard.step(3);
-                    } else {
-                        new PNotify({
-                            title: "Scale Error",
-                            text: resp.error || "Unknown error",
-                            type: "error"
-                        });
-                    }
-                });
-            },
-
-            initializeNFC: function() {
-                OctoPrint.simpleApiCommand("clothopus", "initialize_nfc", {
-                    stack_id: self.wizard._curr_id,
-                    nfc: ko.toJS(self.wizard.nfc)
-                }).done(function(resp) {
-                    if (resp.success) {
-                        self.wizard.step(5);
-                        self.stacksArray.push({
-                            id: self.wizard._curr_id,
-                            data: resp.stack
-                        })
-                    } else {
-                        new PNotify({
-                            title: "Scale Error",
-                            text: resp.error || "Unknown error",
-                            type: "error"
-                        });
-                    }
-                });
-            },
-
-            resetForNewStack: function() {
-                self.wizard.step(1);
-                self.wizard.scale = { dout: ko.observable(""), pd_sck: ko.observable(""), gain: ko.observable(128) };
-                self.wizard.nfc = {
-                    nss: ko.observable(""),
-                    busy: ko.observable(""),
-                    reset: ko.observable(""),
-                    baud: ko.observable(115200),
-                    spi_channel: ko.observable(0)
-                };
-                self.wizard.name("");
-                self.wizard.knownWeight("");
-                self.wizard.result({});
-                self.wizard._curr_id = null;
-            },
-
-            closeWizard: function() {
-                $("#clothopus_wizard").modal("hide");
-            },
-
-            primaryText: ko.pureComputed(function() {
-                switch (self.wizard.step()) {
-                    case 1: return "Initialize Scale";
-                    case 2: return "Next Step";
-                    case 3: return "Next Step";
-                    case 4: return "Initialize NFC Reader";
-                    case 5: return "Add another Stack";
-                }
-            }),
-
-            primaryAction: function() {
-                switch (self.wizard.step()) {
-                    case 1:
-                        self.wizard.initializeScale();
-                        break;
-                    case 2:
-                        self.wizard.calibrateScale();
-                        break;
-                    case 3:
-                        self.wizard.step(4);
-                        break;
-                    case 4:
-                        self.wizard.initializeNFC();
-                        break;
-                    case 5:
-                        self.wizard.resetForNewStack();
-                        break;
-                }
-            },
-
-            secondaryText: ko.pureComputed(function() {
-                return (self.wizard.step() < 5) ? "Cancel" : "Finish";
-            }),
-
-            secondaryAction: function() {
-                if (self.wizard.step() < 5) {
-                    self.wizard.closeWizard();
-                } else {
-                    self.wizard.closeWizard();
-                }
-            }
         };
 
-
-        self.startWizard = function() {
-            self.wizard.resetForNewStack();
-            $("#clothopus_wizard").modal("show");
-        };
+        self.startESPWizard = function() {
+            self.refreshAliveDevices();
+            $("#clothopus_esp_wizard").modal("show");
+        }
 
         self.closeEmptyWizard = function() {
             self.currentEmptyStacks([])
@@ -160,7 +38,7 @@ $(function() {
         self.submitEmptyWizard = function() {
             OctoPrint.simpleApiCommand(
                 "clothopus",
-                "init_empty_nfc", { data: ko.toJS(self.currentEmptyStacks) }
+                "init_empty_nfc", { empties: ko.toJS(self.currentEmptyStacks) }
             ).done(function(resp) {
                 if (resp.success) {
                     self.closeEmptyWizard();
@@ -183,13 +61,13 @@ $(function() {
             });
         };
 
-        self.deleteStack = function (stack) {
+        self.deleteStack = function (device) {
             OctoPrint.simpleApiCommand("clothopus", "delete_stack", {
-                    stack_id: stack.id
+                    mac: device.mac
                 }
             ).done(function(resp) {
                 if (resp.success) {
-                    self.stacksArray.remove(stack);
+                    self.stacksArray.remove(device);
                 } else {
                     new PNotify({
                         title: "Error",
@@ -200,7 +78,24 @@ $(function() {
             });
         }
 
-        self.filamentRows = ko.observableArray([]);
+        self.addStack = function (device) {
+            OctoPrint.simpleApiCommand("clothopus", "add_stack", {
+                    mac: device.mac,
+                    ip: device.ip
+                }
+            ).done(function(resp) {
+                if (resp.success) {
+                    self.stacksArray.push(device);
+                } else {
+                    new PNotify({
+                        title: "Error",
+                        text: resp.error || "Unknown error",
+                        type: "error"
+                    });
+                }
+            });
+        }
+
         self.fetchFilaments = function () {
             OctoPrint.simpleApiCommand(
                 "clothopus",
@@ -250,10 +145,10 @@ $(function() {
         self.onAfterBinding = function () {
             self.settings = self.p0.settings
             const stacks = self.settings.plugins.clothopus.stacks || {};
-            const rows = Object.keys(stacks).map(function (id) {
+            const rows = Object.keys(stacks).map(function (mac) {
                 return {
-                    id: id,
-                    data: stacks[id]
+                    mac: mac,
+                    ip: stacks[mac]
                 };
             });
             self.stacksArray(rows);

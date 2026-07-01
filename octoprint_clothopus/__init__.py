@@ -1,14 +1,16 @@
 # coding=utf-8
 from __future__ import absolute_import
-import threading
+from collections import defaultdict
+from pathlib import Path
+import subprocess
+import time
 import octoprint.plugin
 from octoprint.events import Events
 import flask
-from .stack import Stack
-from .hx711 import HX711
-from .pn5180 import Sensor
-import pigpio
-from .sanitze import sanitize_patch
+import httpx
+from .OPTag import PrintTagHandler
+import asyncio
+import math
 
 class ClothopusPlugin(
     octoprint.plugin.SettingsPlugin,
@@ -21,36 +23,20 @@ class ClothopusPlugin(
 ):
 
     def __init__(self):
-        self._lock = threading.Lock()
-        self._pi = pigpio.pi()
-        self.active_stacks: dict[str, Stack] = {}
-        
-    def on_event(self, event, payload):
-        if event == Events.PRINT_DONE:
-            for _id, stack in self.active_stacks.items():
-                stack.write_tag(with_weight=True)
-        
+        self.taghandlers = defaultdict(PrintTagHandler)
+
+    # def on_event(self, event, payload):
+    #     if event == Events.PRINT_DONE:
+
 
     def on_after_startup(self):
-        self._load_stacks_from_settings()
-        self._logger.info(f"Loaded {len(self.active_stacks)} active stacks.")
+        pass
 
     def on_shutdown(self):
-        for stack in self.active_stacks.values():
-            try:
-                stack.close()
-            except Exception as e:
-                self._logger.info(e)
-        self._pi.stop()
-        self._logger.info(f"Cleaned up correctly")
+        pass
 
     def on_settings_save(self, data):
-        data = sanitize_patch(data)
-        for stack_id in data.get("stacks", {}):
-            if stack_id not in self.active_stacks:
-                data["stacks"].pop(stack_id, None)
-        super().on_settings_save(data)
-        self._load_stacks_from_settings()
+        pass
 
 
     def get_settings_defaults(self):
@@ -70,142 +56,125 @@ class ClothopusPlugin(
             "css": ["css/clothopus.css"]
         }
 
-    def save_stack(self, stack_id, data):
-        stacks = self._settings.get(["stacks"]) or {}
-        stacks[stack_id] = data
-        self._settings.set(["stacks"], stacks)
-        self._settings.save()
-        self._logger.info(f"Saved scale {data}")
-        
-    def delete_stack(self, stack_id):
-        stack = self.active_stacks.pop(stack_id, None)
-        stack.close()
-        stacks = self._settings.get(["stacks"]) or {}
-        _did = stacks.pop(stack_id, None)
-        if _did is None:
-            return
-        self._settings.set(["stacks"], stacks)
-        self._settings.save()
-
     def get_api_commands(self):
+
         return dict(
-            initialize_scale=["stack_id", "name", "pins"],
-            calibrate_scale=["stack_id", "known_weight"],
-            initialize_nfc=["stack_id", "nfc"],
-            get_grams=["stack_id"],
             fetch_filaments=[],
-            delete_stack=["stack_id"],
-            init_empty_nfc=["data"]
+            init_empty_nfc=["empties"],
+            alive_devices=[],
+            delete_stack=["mac"],
+            add_stack=["mac", "ip"],
         )
 
+    async def _get_route_of_esps(self, stacks: dict, path: str):
+        async with httpx.AsyncClient() as client:
+            pulls = {mac: client.get(f"http://{ip}{path}") for mac, ip  in stacks.items()}
+            results = await asyncio.gather(*pulls.values(), return_exceptions=True)
+            return dict(zip(pulls.keys(), results))
+
+    def _init_tag_w_id(self, handler: PrintTagHandler, prusa_id: str):
+        tag_data: dict = handler.generate_opt_json(prusa_id)
+        if not tag_data: return False
+        handler.nfc_initialize()
+        handler.patch_bin(tag_data)
+        return True
+
     def on_api_command(self, command, data: dict):
-        if command == "initialize_scale":
-            stack_id = str(data.get("stack_id"))
-            pins = data.get("pins")
-            stack = Stack(pi=self._pi, name=data.get("name"))
-            if not pins:
-                return flask.jsonify(dict(success=False, error="Missing pins."))
-            with self._lock:
-                try:
-                    scale = HX711(stack.pi, **pins)#TODO
-                except ConnectionError:
-                    return flask.jsonify(dict(success=False, error="Could not connect to scale."))
-            stack.scale = scale
-            self.active_stacks[stack_id] = stack
-            return flask.jsonify(dict(success=True))
-
-        if command == "calibrate_scale":
-            stack_id = str(data.get("stack_id"))
-            known_weight = data.get("known_weight")
-            stack = self.active_stacks.get(stack_id)
-            if not stack or not stack.scale or not known_weight:
-                return flask.jsonify(dict(success=False, error="Could not connect to scale."))
-            with self._lock:
-                result=stack.scale.calib_scale(known_weight)
-            if not result:
-                return flask.jsonify(dict(success=False, error="Could not calibrate scale."))
-            # self.save_scale(stack_id, result)
-            return flask.jsonify(result)
-
-        if command == "initialize_nfc":
-            stack_id = str(data.get("stack_id"))
-            stack = self.active_stacks.get(stack_id)
-            nfc = data.get("nfc")
-            if not stack or not nfc:
-                return flask.jsonify(dict(success=False, error="Missing nfc."))
-            with self._lock:
-                sensor = Sensor.from_json(stack.pi, nfc)
-                if not sensor.reachable():
-                    return flask.jsonify(dict(success=False, error="Could not connect to sensor."))
-            stack.nfc = sensor
-            stack.prepare()
-            self.save_stack(stack_id, stack.json())
-            return flask.jsonify(dict(success=True, stack=stack.json()))
-
+        stacks = self._settings.get(["stacks"]) or {}
         if command == "fetch_filaments":
             empty = []
-            with self._lock:
-                try:
-                    filaments = []
-                    for _id, stack in self.active_stacks.items():
-                        if not stack.nfc: continue
-                        filament = stack.read_tag()
-                        if filament:
-                            if filament.get("data", {}).get("aux", {}).get("consumed_weight") is None:
-                                filament = stack.write_tag(with_weight=True)
-                            filaments.append(filament | {"stack_name": stack.name, "stack_id": _id})
-                        elif filament is not None: 
-                            empty.append({"id": _id, "filament": ""})
-                except TimeoutError as e:
-                    return flask.jsonify(dict(success=False, error=f"Stack {_id}: {e}"))
+            filaments = []
+            for mac, resp in asyncio.run(self._get_route_of_esps(stacks, "/blocks")).items():
+                if not isinstance(resp, httpx.Response): continue
+                if resp.status_code == 204:
+                    empty.append({"mac": mac, "filament": ""})
+                elif resp.status_code == 200:
+                    raw = bytearray(resp.content)
+                    handler = self.taghandlers[mac]
+                    handler.current_record = raw
+                    try:
+                        _info = handler.bin_to_dict()
+                        consumed_resp = httpx.get(f"http://{stacks[mac]}/consumed", params={
+                            "filament_diameter": _info["data"]["main"].get("filament_diameter", 1.75),
+                            "density": _info["data"]["main"]["density"]
+                        })
+                        consumed_resp.raise_for_status()
+                        clicks_consumed = consumed_resp.json()["consumed_weight"]
+                        if clicks_consumed != 0:
+                            consumed = _info["data"]["aux"]["consumed_weight"]
+                            consumed += clicks_consumed
+                            weight = {"data": { "aux": {"consumed_weight": consumed}}}
+                            handler.current_record = raw
+                            resp = httpx.post(
+                                f"http://{stacks[mac]}/blocks", params={"retries_per_block": 10, "diff_only": True, "with_weight": True},
+                                content=handler.patch_bin(weight)
+                            )
+                            resp.raise_for_status()
+                    except Exception as e:
+                        return flask.jsonify(dict(success=False, error=f"Corrupt tag: {e} @ {mac}"))
+                    filaments.append(handler.bin_to_dict())
             return flask.jsonify(dict(success=True, rows=filaments, empty=empty))
 
-        if command == "get_grams":
-            stack_id = str(data.get("stack_id"))
-            scale = self.active_stacks.get(stack_id)
-            with self._lock:
-                if not scale or not scale.reachable():
-                    return flask.jsonify(dict(success=False, error="Could not connect to scale."))
-                return flask.jsonify(dict(success=True, grams=scale.get_grams()))
-            
-        if command == "delete_stack":
-            stack_id = str(data.get("stack_id"))
-            stack = self.active_stacks.get(stack_id, None)
-            if stack is None:
-                return flask.jsonify(dict(success=False, error="Invalid scale."))
-            self.delete_stack(stack_id)
-            return flask.jsonify(dict(success=True))
-        
         if command == "init_empty_nfc":
-            empties = data.get("data")
+            empties = data.get("empties")
             for empty in empties:
-                stack_id = str(empty.get("id"))
+                mac = str(empty.get("mac"))
+                ip = stacks.get(mac)
+                if ip is None:
+                    return flask.jsonify(dict(success=False, error="Unknown MAC address."))
+                handler = self.taghandlers[mac]
                 filament = str(empty.get("filament"))
-                stack = self.active_stacks.get(stack_id, None)
-                if stack is None:
-                    return flask.jsonify(dict(success=False, error="Invalid scale."))
-                with self._lock:
-                    resp = stack.init_tag_w_id(filament)
-                    if not resp: return flask.jsonify(dict(success=False, error="Invalid PRUSA-ID."))
-                    stack.write_tag()
+                resp = self._init_tag_w_id(handler, filament)
+                if not resp: return flask.jsonify(dict(success=False, error="Invalid PRUSA-ID."))
+                # stack.write_tag()
+                try:
+                    resp = httpx.post(f"http://{ip}/blocks", params={"retries_per_block": 10, "diff_only": True, "with_weight": True}, content=bytes(handler.current_record.data))
+                except Exception as e:
+                    return flask.jsonify(dict(success=False, error=str(e)))
+                if resp.status_code != 200:
+                    return flask.jsonify(dict(success=False, error=str(resp.status_code)))
             return flask.jsonify(dict(success=True))
+
+        if command == "add_stack":
+            mac = str(data.get("mac"))
+            ip = str(data.get("ip"))
+            stacks[mac] = ip
+            self._settings.set(["stacks"], stacks)
+            self._settings.save()
+            return flask.jsonify(dict(success=True))
+
+        if command == "delete_stack":
+            mac = str(data.get("mac"))
+            if stacks.pop(mac, None) is None:
+                return flask.jsonify(dict(success=False))
+            self._settings.set(["stacks"], stacks)
+            self._settings.save()
+            return flask.jsonify(dict(success=True))
+
+        if command == "alive_devices":
+            devices = []
+            with Path("/var/lib/misc/dnsmasq.leases").open() as f:
+                for line in f:
+                    parts = line.split()
+                    if len(parts) < 3:
+                        continue
+                    expiry, mac, ip = int(parts[0]), parts[1], parts[2]
+                    if expiry != 0 and expiry < time.time():
+                        continue
+                    # ping = subprocess.run(["ping", "-I", "wlan0", "-c", "1", "-W", "1", ip], stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL)
+                    # if ping.returncode == 0:
+                    try:
+                        resp =httpx.get(f"http://{ip}/reachable")
+                        if resp.status_code == 200:
+                            devices.append({"mac": mac, "ip": ip})
+                    except Exception as e:
+                        continue
+
+
+            return flask.jsonify(dict(success=True, devices=devices))
 
     def is_api_protected(self):
         return True
-
-    def _load_stacks_from_settings(self):
-        stacks_cfg = self._settings.get(["stacks"]) or {}
-        for stack in getattr(self, "active_stacks", {}).values():
-            try:
-                stack.close()
-            except Exception:
-                self._logger.exception("Failed to close stack")
-        self.active_stacks = {}
-        for key, cfg in stacks_cfg.items():
-            with self._lock:
-                stack = Stack.from_json(self._pi, cfg)
-                stack.prepare()
-                self.active_stacks[key] = stack
 
 
 

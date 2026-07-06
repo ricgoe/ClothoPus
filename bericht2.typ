@@ -4,6 +4,7 @@
   paper: "a4",
   margin: (top: 2.5cm, bottom: 2.5cm, left: 3cm, right: 3cm),
 )
+#set math.equation(numbering: "1.")
 #let fig(img, title, source, ..args) = block(
   breakable: false,
   [
@@ -34,7 +35,7 @@
   #line(length: 70%, stroke: 0.6pt)
 
   #v(0.8cm)
-  #text(size: 18pt, weight: "bold")[Clothopus]
+  #text(size: 18pt, weight: "bold")[ClothoPus]
 
   #v(0.8cm)
   #line(length: 70%, stroke: 0.6pt)
@@ -200,7 +201,7 @@ Positiv hervorzuheben ist bei dieser Weiterentwicklung die agilität aufgrund de
 
 == Produkt und Vernetzung
 
-_Clothopus_ ist als modulares, vernetztes Smart-System zur automatisierten Filamentverwaltung im Bereich des privaten und semiprofessionellen 3D-Drucks konzipiert.  
+_ClothoPus_ ist als modulares, vernetztes Smart-System zur automatisierten Filamentverwaltung im Bereich des privaten und semiprofessionellen 3D-Drucks konzipiert.  
 Das Produkt dient der kontinuierlichen Identifikation und *Längenerfassung* mehrerer Filamentrollen und stellt diese Informationen externen Druckmanagementsystemen zur Verfügung.
 
 #figure(
@@ -211,9 +212,19 @@ Im Gegensatz zum vorherigen Aufbau existiert keine zentrale GPIO-basierte Steuer
 
 Die Stromversorgung und Datenübertragung erfolgen über Power over Ethernet. Dadurch genügt ein einziges Netzwerkkabel pro Stack, um sowohl Energie als auch Kommunikation bereitzustellen. Die Skalierung des Systems erfolgt somit über einen PoE-fähigen Netzwerkswitch. 
 
-Diese Architektur stellt eine wesentliche Verbesserung gegenüber dem vorherigen System dar. Während zuvor maximal fünf Stacks aufgrund der begrenzten Anzahl verfügbarer GPIO-Pins betrieben werden konnten, lassen sich nun in einem üblichen IPv4-/24-Subnetz theoretisch bis zu 253 Geräte adressieren @subnet. Durch größere Netzwerke, mehrere Subnetze oder angepasste Netzwerkkonfigurationen ist die Skalierung grundsätzlich nahezu unbegrenzt erweiterbar und lediglich durch die Verwendung von Switches und deren Anschlüssen begrenzt. 
+Diese Architektur stellt eine wesentliche Verbesserung gegenüber dem vorherigen System dar. Während zuvor maximal fünf Stacks aufgrund der begrenzten Anzahl verfügbarer GPIO-Pins betrieben werden konnten, lassen sich nun in einem üblichen IPv4-/24-Subnetz theoretisch bis zu 253 Geräte adressieren @subnet. Durch größere Netzwerke, mehrere Subnetze oder angepasste Netzwerkkonfigurationen ist die Skalierung grundsätzlich nahezu unbegrenzt erweiterbar und lediglich durch die Verwendung von Switches und deren Anschlüssen begrenzt.
 
-OctoPrint bleibt zunächst weiterhin die primäre Benutzeroberfläche für die Darstellung der Filamentinformationen und wird auf einem Raspberry Pi gehosted.
+Die in der ersten Iterationsstufe entwickelten Leiterplatten konnten aufgrund einer vorausschauenden Planung weiterhin genutzt werden. Hierzu wurden die Wägezellentreiber entfernt und die interne Verbindung zu den SUB-D-Steckern durch einen mit dem ESP32 kompatiblen Stecker ersetzt. Die Eingangspins des Wägezellentreibers konnten für den Encoder wiederverwendet werden, da dieser lediglich zwei GPIO-Pins sowie einen GND-Pin benötigt. @aktualisierte_verk zeigt die oben beschriebenen Änderungen.
+
+#figure(
+ image("assets/schachtel_offen_3.png", height: 220pt), caption: [Aktualisierte Verkabelung innerhalb des Stacks.]
+)<aktualisierte_verk>
+
+OctoPrint bleibt zunächst weiterhin die primäre Benutzeroberfläche für die Darstellung der Filamentinformationen und wird auf einem Raspberry Pi gehosted. Dieser befindet sich in einem zentralen Gehäuse, welches vor groben äußeren Einflüssen schützt. 
+
+#figure(
+ image("assets/clothobox.png"), caption: [Verkabelung innerhalb des zentralen Gehäuses.]
+)<clothobox>
 
 Gleichzeitig ist das System durch die REST-API jedoch deutlich offener. Jedes beliebige Frontend kann die bereitgestellten Daten abrufen und weiterverarbeiten. Neben OctoPrint wären dadurch beispielsweise eigene proprietäre Anwendungen, Web-Dashboards oder Integrationen in Home Assistant möglich.
 
@@ -225,10 +236,10 @@ Als Recheneinheit jedes einzelnen Stacks kommt ein Olimex ESP32 PoE zum Einsatz.
 Der Mikrocontroller übernimmt alle lokalen Aufgaben des Stacks. Dazu zählen die Kommunikation mit dem PN5180-NFC-Reader, die Auswertung des Encoders, die Berechnung des verbrauchten Materials sowie die Bereitstellung der REST-API.
 
 #figure(
- image("assets/schachtel_offen_1.png", height: 340pt), caption: [Aufbau des Stacks.]
+ image("assets/schachtel_offen_1.png", height: 290pt), caption: [Aufbau des Stacks.]
 )<stackview>
 
-Durch die Verwendung des ESP32 (seitlich in @stackview) wird jeder Stack zu einem eigenständigen Netzwerkteilnehmer. Dies reduziert die Abhängigkeit von zentraler Hardware erheblich und verbessert Wartbarkeit, Erweiterbarkeit und Skalierbarkeit des Gesamtsystems. So kann _ClothoPus_ nicht nur in Heimnetzwerken sondern auch in groß skalierten Industrie 4.0 (IOT) Netzwerken verwendet werden.
+Durch die Verwendung des ESP32 (seitlich in @stackview) wird jeder Stack zu einem eigenständigen Netzwerkteilnehmer. Dies reduziert die Abhängigkeit von zentraler Hardware erheblich und verbessert Wartbarkeit, Erweiterbarkeit und Skalierbarkeit des Gesamtsystems.
 
 Die Nutzung von Power over Ethernet ist hierbei besonders vorteilhaft, da keine separate Stromversorgung pro Stack erforderlich ist. Versorgung und Kommunikation werden über dieselbe physische Verbindung realisiert.
 
@@ -247,48 +258,43 @@ Die bereits entwickelten Lese- und Schreibfunktionen wurden nicht verändert. Di
 
 === Verbrauchsmessung über Encoder
 
-Die bisherige Gewichtsmessung über Wägezellen wurde durch ein encoderbasiertes Messprinzip ersetzt.
-Grund hierfür war das Kriechverhalten der zuvor eingesetzten HX710-basierten Waagensysteme. Da die Wägezellen dauerhaft durch die Filamentrollen belastet wurden, veränderten sich die Messwerte im Laufe der Zeit. Dies führte zu einer zunehmenden Ungenauigkeit der Gewichtserfassung.
-
 Im neuen System wird der Materialverbrauch nicht mehr durch eine direkte Gewichtsmessung bestimmt, sondern aus der durchlaufenden Filamentlänge berechnet. Hierfür wurde ein eigener mechanischer Aufnehmer mit zwei Zahnrädern entwickelt. Das Filament treibt den Aufnehmer direkt an, wodurch die Bewegung auf ein Odometer-Rad übertragen wird. Die Drehbewegung wird durch einen Encoder erfasst.
 
-Aus der Anzahl der Encoder-Impulse wird zunächst die zurückgelegte Filamentlänge berechnet. Anschließend wird über den Filamentdurchmesser die Querschnittsfläche bestimmt. Zusammen mit der Dichte des Materials ergibt sich daraus das verbrauchte Gewicht.
+Aus der Anzahl der Encoder-Impulse wird zunächst die zurückgelegte Filamentlänge berechnet. Der verwendete Encoder hat eine Auflösung von 24 Schritten pro Umdrehung @kailh_spreadsheet.
+Anschließend wird über den Filamentdurchmesser die Querschnittsfläche bestimmt. Zusammen mit der Dichte des Materials ergibt sich daraus das verbrauchte Gewicht.
 
 Die Berechnung erfolgt nach folgendem Prinzip:
 
-```python
-def weight_from_clicks(self, density: float, filament_diameter: float):
-    o = ODOMETER_DIAMETER / 10
-    f = filament_diameter / 10
-    length = self.get_count() * (math.pi * o) / PER_ROTATION
-    area = math.pi * (f / 2) ** 2
-    return density * area * length
-```
+Länge: $ l ["mm"] = pi dot (n_"clicks")/24 dot diameter_o ["mm"] $<länge>
 
-Der Odometer-Durchmesser und der Filamentdurchmesser werden hierbei von Millimetern in Zentimeter umgerechnet. Die Länge ergibt sich aus der Anzahl der gezählten Encoder-Schritte, dem Umfang des Odometer-Rades und der Anzahl der Encoder-Schritte pro Umdrehung. Die Querschnittsfläche des Filaments wird kreisförmig angenommen. Da die Dichte in Gramm pro Kubikzentimeter angegeben ist, ergibt sich das berechnete Ergebnis direkt als Masse in Gramm.
+Querschnittsfläche $ A ["mm"^2] = pi dot (diameter_f/2)^2 $
+
+Gewicht: $ m [g] = rho [g/"mm"^3] dot l dot A $
 
 Die Materialdichte und der Filamentdurchmesser werden direkt vom NFC-Tag ausgelesen. Dadurch ist die Berechnung materialspezifisch und kann automatisch an unterschiedliche Filamente angepasst werden.
 
 === REST-API
 
 Auf jedem ESP32 läuft eine Microdot-basierte REST-API.
-Microdot stellt eine leichtgewichtige, Flask-ähnliche Anwendungsstruktur für MicroPython bereit und eignet sich dadurch für den Einsatz auf ressourcenbeschränkten Mikrocontrollern.
+Microdot stellt eine leichtgewichtige, Flask-ähnliche Anwendungsstruktur für MicroPython bereit und eignet sich dadurch für den Einsatz auf ressourcenbeschränkten Mikrocontrollern @microdot_doc.
 
 Die API bildet die zentrale Schnittstelle zwischen einem Stack und externen Anwendungen. Sie ermöglicht sowohl den Zugriff auf NFC-Daten als auch auf Status- und Verbrauchsinformationen.
 
 Die implementierten Endpunkte sind:
 
-`GET /blocks`
-Dieser Endpunkt liest die Datenblöcke des NFC-Tags aus und stellt sie dem aufrufenden System zur Verfügung.
-
-`POST /blocks`
-Dieser Endpunkt ermöglicht das Schreiben von Datenblöcken auf den NFC-Tag.
-
-`GET /reachable`
-Dieser Endpunkt dient zur Prüfung, ob ein Stack im Netzwerk erreichbar ist. Dadurch können Frontends oder Integrationssysteme feststellen, welche Stacks aktuell verfügbar sind.
-
-`GET /consumed`
-Dieser Endpunkt gibt das bisher berechnete verbrauchte Filamentgewicht in Gramm zurück.
+#align(center, 
+  table(columns: (auto, auto), align: left,
+    table.header(
+        [*Endpunkt*], [*Beschreibung*],
+    ),
+    stroke: none,
+    table.hline(),
+    `GET /blocks`, table.vline(), "Auslesen von NDEF OpenPrintTag Datenblöcken.",
+    `POST /blocks`, "Schreiben von NDEF OpenPrintTag Datenblöcken.",
+    `GET /reachable`, "Prüfung der Netzwerkerreichbarkeit von Stacks.",
+    `GET /consumed`, "Abfrage des seit letzter Anfrage verbrauchten Materials."
+  )
+)
 
 Durch diese Endpunkte entsteht eine klare, offene und leicht integrierbare Schnittstelle. Externe Systeme müssen nicht wissen, wie NFC-Kommunikation oder Encoder-Auswertung intern funktionieren. Sie können stattdessen über HTTP auf die abstrahierten Funktionen des jeweiligen Stacks zugreifen.
 
@@ -297,18 +303,26 @@ Durch diese Endpunkte entsteht eine klare, offene und leicht integrierbare Schni
 Die neue Connectivity-Architektur basiert vollständig auf Ethernet und IP-Kommunikation.
 Jeder Stack ist über ein Netzwerkkabel mit einem PoE-fähigen Switch verbunden. Über dieses Kabel werden sowohl die Stromversorgung als auch die Netzwerkkommunikation realisiert.
 
-Im Vergleich zur vorherigen proprietären Verkabelung ergeben sich dadurch mehrere Vorteile. Erstens reduziert sich der Verkabelungsaufwand, da keine getrennten Leitungen für Stromversorgung, Datenübertragung und Sensorsignale notwendig sind. Zweitens wird die mechanische Integration vereinfacht, da jeder Stack als eigenständige Einheit betrachtet werden kann. Drittens kann das System wesentlich einfacher erweitert werden, da neue Stacks lediglich an den Switch angeschlossen und im Netzwerk adressiert werden müssen.
+Im Vergleich zur vorherigen proprietären Verkabelung ergeben sich dadurch mehrere Vorteile. Erstens reduziert sich der Verkabelungs und Lötaufwand, da keine getrennten Leitungen für Stromversorgung, Datenübertragung und Sensorsignale notwendig sind. Zweitens wird die mechanische Integration vereinfacht, da jeder Stack als eigenständige Einheit betrachtet werden kann. Drittens kann das System wesentlich einfacher erweitert werden, da neue Stacks lediglich an den Switch angeschlossen und im Netzwerk adressiert werden müssen.
 
 Die Kommunikation zwischen Frontend und Stack erfolgt über standardisierte HTTP-Anfragen. Dadurch ist das System nicht an OctoPrint gebunden. OctoPrint kann weiterhin als Bedienoberfläche dienen, ist aber nicht zwingend erforderlich. Andere Softwarelösungen können dieselben REST-Endpunkte verwenden und die Daten in eigene Workflows integrieren.
 
+Die Kommunikation mit dem PN5180-NFC-Reader erfolgt über eine SPI-Schnittstelle, über die Steuer- und Nutzdaten ausgetauscht werden.
+Der Kailh-Encoder erzeugt eine steigende Flanke, die mithilfe eines Interrupt-Handlers des ESP32 erfasst wird. Dabei wird ein interner Zähler hochgezählt, wodurch, wie in @länge beschrieben, die abgespulte Materiallänge berechnet werden kann.
+
+=== Data Analytics
+[DAS MACHT RICHARD DAMIT HABE ICH NIX ZU TUN]
+
 == Aktoren und Ausgänge
 
-Physische Aktoren sind im aktuellen Entwicklungsstand nicht vorgesehen.
-Die Ausgabe der verarbeiteten Informationen erfolgt softwareseitig über die REST-API und zunächst über die bestehende OctoPrint-Integration.
+Die Ausgabe der verarbeiteten Daten erfolgt vollständig softwareseitig über das Webinterface von OctoPrint.
+Dem Nutzer werden dort Informationen über das aktuell eingesetzte Filament sowie dessen verbleibendes Gewicht übersichtlich dargestellt (@filament-view).
 
-Dem Nutzer können dort Informationen über die eingesetzten Filamente, deren NFC-Daten und den bisher berechneten Verbrauch angezeigt werden. Da die Daten über die einzelnen ESP32-Stacks bereitgestellt werden, ist die Darstellung jedoch nicht auf OctoPrint beschränkt. Zukünftige Benutzeroberflächen können die REST-API direkt nutzen und eigene Visualisierungen, Inventaransichten oder Automatisierungen umsetzen.
-
-Insbesondere durch die Möglichkeit der Integration in Plattformen wie Home Assistant entsteht eine deutlich offenere Systemarchitektur. _ClothoPus_ kann dadurch nicht nur als OctoPrint-Erweiterung, sondern auch als allgemeines Smart-Inventory-System für Filamentrollen verstanden werden.
+#figure(
+ image("assets/Clotho_filament_view.png"), caption: [Darstellung des aktuellen Filamentinventars in OctoPrint.]
+)<filament-view>
+ 
+Physische Aktoren wie Anzeigen oder Signale sind im aktuellen Entwicklungsstand nicht vorgesehen, da der Fokus auf einer nahtlosen Integration in bestehende Druck-Workflows liegt.
 
 == Service und Unterstützung
 

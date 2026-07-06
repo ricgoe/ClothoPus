@@ -209,20 +209,26 @@ Das Produkt dient der kontinuierlichen Identifikation und *Längenerfassung* meh
 
 Im Gegensatz zum vorherigen Aufbau existiert keine zentrale GPIO-basierte Steuereinheit mehr, an die alle Stacks direkt angeschlossen werden müssen. Stattdessen verfügt jeder Stack über einen eigenen Olimex ESP32 PoE. Dieser übernimmt lokal die Sensordatenerfassung, die NFC-Kommunikation, die Berechnung des verbrauchten Filaments sowie die Bereitstellung der Daten über eine REST-Schnittstelle.
 
-Die Stromversorgung und Datenübertragung erfolgen über Power over Ethernet. Dadurch genügt ein einziges Netzwerkkabel pro Stack, um sowohl Energie als auch Kommunikation bereitzustellen. Die Skalierung des Systems erfolgt somit über einen PoE-fähigen Netzwerkswitch.
+Die Stromversorgung und Datenübertragung erfolgen über Power over Ethernet. Dadurch genügt ein einziges Netzwerkkabel pro Stack, um sowohl Energie als auch Kommunikation bereitzustellen. Die Skalierung des Systems erfolgt somit über einen PoE-fähigen Netzwerkswitch. 
 
-Diese Architektur stellt eine wesentliche Verbesserung gegenüber dem vorherigen System dar. Während zuvor maximal fünf Stacks aufgrund der begrenzten Anzahl verfügbarer GPIO-Pins betrieben werden konnten, lassen sich nun in einem üblichen IPv4-/24-Subnetz theoretisch bis zu 253 Geräte adressieren. Durch größere Netzwerke, mehrere Subnetze oder angepasste Netzwerkkonfigurationen ist die Skalierung grundsätzlich nahezu unbegrenzt erweiterbar.
+Diese Architektur stellt eine wesentliche Verbesserung gegenüber dem vorherigen System dar. Während zuvor maximal fünf Stacks aufgrund der begrenzten Anzahl verfügbarer GPIO-Pins betrieben werden konnten, lassen sich nun in einem üblichen IPv4-/24-Subnetz theoretisch bis zu 253 Geräte adressieren @subnet. Durch größere Netzwerke, mehrere Subnetze oder angepasste Netzwerkkonfigurationen ist die Skalierung grundsätzlich nahezu unbegrenzt erweiterbar und lediglich durch die Verwendung von Switches und deren Anschlüssen begrenzt. 
 
-OctoPrint bleibt zunächst weiterhin die primäre Benutzeroberfläche für die Darstellung der Filamentinformationen. Gleichzeitig ist das System durch die REST-API jedoch deutlich offener. Jedes beliebige Frontend kann die bereitgestellten Daten abrufen und weiterverarbeiten. Neben OctoPrint wären dadurch beispielsweise eigene proprietäre Anwendungen, Web-Dashboards oder Integrationen in Home Assistant möglich.
+OctoPrint bleibt zunächst weiterhin die primäre Benutzeroberfläche für die Darstellung der Filamentinformationen und wird auf einem Raspberry Pi gehosted.
+
+Gleichzeitig ist das System durch die REST-API jedoch deutlich offener. Jedes beliebige Frontend kann die bereitgestellten Daten abrufen und weiterverarbeiten. Neben OctoPrint wären dadurch beispielsweise eigene proprietäre Anwendungen, Web-Dashboards oder Integrationen in Home Assistant möglich.
 
 == Technologie und Daten
 
 === Dezentrale Steuereinheit
 
-Als zentrale Recheneinheit jedes einzelnen Stacks kommt ein Olimex ESP32 PoE zum Einsatz.
+Als Recheneinheit jedes einzelnen Stacks kommt ein Olimex ESP32 PoE zum Einsatz.
 Der Mikrocontroller übernimmt alle lokalen Aufgaben des Stacks. Dazu zählen die Kommunikation mit dem PN5180-NFC-Reader, die Auswertung des Encoders, die Berechnung des verbrauchten Materials sowie die Bereitstellung der REST-API.
 
-Durch die Verwendung des ESP32 wird jeder Stack zu einem eigenständigen Netzwerkteilnehmer. Dies reduziert die Abhängigkeit von zentraler Hardware erheblich und verbessert Wartbarkeit, Erweiterbarkeit und Skalierbarkeit des Gesamtsystems.
+#figure(
+ image("assets/schachtel_offen_1.png", height: 340pt), caption: [Aufbau des Stacks.]
+)<stackview>
+
+Durch die Verwendung des ESP32 (seitlich in @stackview) wird jeder Stack zu einem eigenständigen Netzwerkteilnehmer. Dies reduziert die Abhängigkeit von zentraler Hardware erheblich und verbessert Wartbarkeit, Erweiterbarkeit und Skalierbarkeit des Gesamtsystems. So kann _ClothoPus_ nicht nur in Heimnetzwerken sondern auch in groß skalierten Industrie 4.0 (IOT) Netzwerken verwendet werden.
 
 Die Nutzung von Power over Ethernet ist hierbei besonders vorteilhaft, da keine separate Stromversorgung pro Stack erforderlich ist. Versorgung und Kommunikation werden über dieselbe physische Verbindung realisiert.
 
@@ -231,7 +237,11 @@ Die Nutzung von Power over Ethernet ist hierbei besonders vorteilhaft, da keine 
 Zur Identifikation der Filamentrollen wird weiterhin der NFC-Reader PN5180 eingesetzt.
 Der verwendete NFC-Chip bleibt damit gegenüber dem vorherigen Projektstand unverändert.
 
-Die bereits entwickelten Lese- und Schreibfunktionen wurden nicht erneut verändert. Die wesentliche Weiterentwicklung bestand stattdessen darin, den vorhandenen Treiber auf MicroPython umzuschreiben. Dadurch kann die NFC-Kommunikation direkt auf dem ESP32 ausgeführt werden.
+#figure(
+ image("assets/stack_komplett.png", height: 340pt), caption: [Rückansicht Stack.]
+)<stackkomplett>
+#pagebreak()
+Die bereits entwickelten Lese- und Schreibfunktionen wurden nicht verändert. Die wesentliche Weiterentwicklung bestand stattdessen darin, den vorhandenen Treiber auf MicroPython umzuschreiben. Dadurch kann die NFC-Kommunikation direkt auf dem ESP32 ausgeführt werden.
 
 Über den NFC-Tag werden relevante Filamentdaten ausgelesen. Dazu gehören insbesondere Materialparameter wie Dichte und Filamentdurchmesser. Diese Informationen werden nicht nur zur Identifikation des Filaments genutzt, sondern auch direkt in die Berechnung des bisher verbrauchten Gewichts einbezogen.
 

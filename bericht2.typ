@@ -35,7 +35,7 @@
   #line(length: 70%, stroke: 0.6pt)
 
   #v(0.8cm)
-  #text(size: 18pt, weight: "bold")[ClothoPus]
+  #text(size: 18pt, weight: "bold")[ClothoPus II]
 
   #v(0.8cm)
   #line(length: 70%, stroke: 0.6pt)
@@ -43,9 +43,9 @@
   #v(1.2cm)
 
   #text(size: 11pt)[
-    *Modul:* Smart Systems II \
+    *Modul:* Smart Systems I \
     *Dozent:* Prof. Dr.-Ing. Michael Protogerakis \
-    *Semester:* Wintersemester 2025/26
+    *Semester:* Sommersemester 2026
   ]
 
   #v(0.8cm)
@@ -59,7 +59,6 @@
 
     [Richard Bihlmeier], [939194],
     [Jannis Bollien], [940810],
-    [Emil Ötting], [934966],
   )
 
 
@@ -73,7 +72,7 @@
 Der Name „ClothoPus“ ist aus einer symbolischen Verbindung zweier Begriffe entstanden.
 „Clotho“ entstammt der griechischen Mythologie und bezeichnet eine der drei Moiren, die als Schicksalsgöttinnen den Lebensfaden der Menschen spinnen. In Anlehnung an dieses Motiv steht Clotho sinnbildlich für den Faden als zentrales Element des Systems. Im Kontext des Projekts entspricht dieser Faden dem 3D-Druck-Filament als grundlegendem Fertigungsmaterial.
 
-Der zweite Bestandteil „Pus“ leitet sich vom Maskottchen der Druckmanagement-Software OctoPrint ab, dem Oktopus. Da das entwickelte System direkt in OctoPrint integriert ist, stellt dieser Namensbestandteil die technische und funktionale Verbindung zur Softwareplattform dar.
+Der zweite Bestandteil „Pus“ leitet sich vom Maskottchen der Druckmanagement-Software OctoPrint ab, dem Oktopus.
 
 Aus der Kombination beider Begriffe entstand die Bezeichnung „ClothoPus“.
 
@@ -101,6 +100,12 @@ Aus der Kombination beider Begriffe entstand die Bezeichnung „ClothoPus“.
   target: figure.where(kind: image),
   indent: 1.5em
 )
+
+#outline(
+  title: "Gleichungsverzeichnis",
+  target: math.equation.where(block: true),
+  indent: 1.5em,
+)
 #pagebreak()
 
 = Einleitung
@@ -121,14 +126,9 @@ Vor diesem Hintergrund wurde _ClothoPus_ in der aktuellen Projektphase grundlege
 
 == Zielsetzung
 
-Ziel des Projekts war die Weiterentwicklung von _ClothoPus_ zu einem skalierbaren, dezentralen und netzwerkfähigen System zur automatisierten Filamentverwaltung.
+Ziel des Projekts war die Weiterentwicklung von ClothoPus zu einem skalierbaren, dezentralen und netzwerkfähigen System zur automatisierten Filamentverwaltung.
 
-Im Mittelpunkt standen drei zentrale Verbesserungen.
-Erstens sollte die bisherige Begrenzung auf fünf Filament-Stacks aufgehoben werden. Statt einer zentralen GPIO-basierten Architektur sollte jeder Stack eine eigene intelligente Steuereinheit erhalten. Hierfür wurde in jedem Stack ein Olimex ESP32 PoE integriert. Dadurch werden sowohl Stromversorgung als auch Datenübertragung über Ethernet realisiert. Die Skalierung erfolgt somit nicht mehr über die Anzahl verfügbarer GPIO-Pins, sondern über einen PoE-fähigen Netzwerkswitch.
-
-Zweitens sollte die bisherige Gewichtserfassung durch Wägezellen ersetzt werden. Da die dauerhaft belasteten Wägezellen langfristig ungenaue Messergebnisse lieferten, wurde ein alternatives Messprinzip auf Basis eines direkt durch das Filament angetriebenen Encoders entwickelt. Über die gemessenen Umdrehungen eines Odometer-Rades, dessen Durchmesser sowie die auf dem NFC-Tag gespeicherten Materialdaten wird der bisher verbrauchte Filamentanteil berechnet.
-
-Drittens sollte die Softwarearchitektur offener gestaltet werden. Zwar bleibt OctoPrint zunächst weiterhin die primäre Benutzeroberfläche, jedoch stellt jeder ESP32-Stack über eine Microdot-basierte REST-API eigene Endpunkte bereit. Dadurch können neben OctoPrint auch beliebige andere Frontends oder Integrationsplattformen verwendet werden, beispielsweise proprietäre Anwendungen oder Home Assistant.
+Im Fokus standen dabei drei zentrale Aspekte: die Aufhebung der bisherigen Begrenzung auf wenige Filament-Stacks, die Entwicklung eines alternativen Messprinzips zur Erfassung des Filamentverbrauchs sowie eine offenere Softwarearchitektur für zukünftige Erweiterungen und Integrationen.
 
 #pagebreak()
 
@@ -226,8 +226,6 @@ OctoPrint bleibt zunächst weiterhin die primäre Benutzeroberfläche für die D
  image("assets/clothobox.png"), caption: [Verkabelung innerhalb des zentralen Gehäuses.]
 )<clothobox>
 
-Gleichzeitig ist das System durch die REST-API jedoch deutlich offener. Jedes beliebige Frontend kann die bereitgestellten Daten abrufen und weiterverarbeiten. Neben OctoPrint wären dadurch beispielsweise eigene proprietäre Anwendungen, Web-Dashboards oder Integrationen in Home Assistant möglich.
-
 == Technologie und Daten
 
 === Dezentrale Steuereinheit
@@ -308,7 +306,7 @@ Im Vergleich zur vorherigen proprietären Verkabelung ergeben sich dadurch mehre
 Die Kommunikation zwischen Frontend und Stack erfolgt über standardisierte HTTP-Anfragen. Dadurch ist das System nicht an OctoPrint gebunden. OctoPrint kann weiterhin als Bedienoberfläche dienen, ist aber nicht zwingend erforderlich. Andere Softwarelösungen können dieselben REST-Endpunkte verwenden und die Daten in eigene Workflows integrieren.
 
 Die Kommunikation mit dem PN5180-NFC-Reader erfolgt über eine SPI-Schnittstelle, über die Steuer- und Nutzdaten ausgetauscht werden.
-Der Kailh-Encoder erzeugt eine steigende Flanke, die mithilfe eines Interrupt-Handlers des ESP32 erfasst wird. Dabei wird ein interner Zähler hochgezählt, wodurch, wie in @länge beschrieben, die abgespulte Materiallänge berechnet werden kann.
+Der Kailh-Encoder erzeugt bei Drehbewegung steigende Flanken, die mithilfe eines Interrupt-Handlers des ESP32 erfasst werden. Dabei wird ein interner Zähler hochgezählt, wodurch, wie in @länge beschrieben, die abgespulte Materiallänge berechnet werden kann.
 
 === Data Analytics
 [DAS MACHT RICHARD DAMIT HABE ICH NIX ZU TUN]
@@ -326,25 +324,24 @@ Physische Aktoren wie Anzeigen oder Signale sind im aktuellen Entwicklungsstand 
 
 == Service und Unterstützung
 
-_ClothoPus_ bleibt als offenes und erweiterbares System konzipiert.
-Durch die Verwendung standardisierter Netzwerktechnik, einer HTTP-basierten REST-API und dezentraler ESP32-Stacks wird die Anpassbarkeit des Systems gegenüber dem vorherigen Stand deutlich erhöht.
+_ClothoPus_ ist bewusst als Open-Source-System konzipiert. Sowohl die Softwarekomponenten als auch die Hardwareentwürfe sind offen zugänglich und dokumentiert. Dadurch wird es Dritten ermöglicht, das System nachzubauen, anzupassen und weiterzuentwickeln.
 
-Die Offenheit zeigt sich sowohl auf Hardware- als auch auf Softwareebene. Einzelne Stacks können unabhängig voneinander aufgebaut, getestet, ersetzt oder erweitert werden. Softwareseitig erlaubt die REST-API eine einfache Integration in unterschiedliche Frontends und Automatisierungssysteme.
+Im Gegensatz zu klassischen, proprietären Smart-Systemen basiert das Unterstützungsmodell nicht primär auf einem zentralisierten Kundendienst, sondern auf einer kollaborativen Community-Struktur. Anwender und Entwickler können Fehlerberichte einreichen, Verbesserungsvorschläge diskutieren und eigene Erweiterungen beitragen. Dieser offene Entwicklungsansatz entspricht der in der 3D-Druck-Community etablierten Praxis und fördert Transparenz sowie Innovationsgeschwindigkeit.
 
-Dadurch eignet sich das System nicht nur für den ursprünglichen Einsatz innerhalb von OctoPrint, sondern auch für weiterführende Anwendungen wie zentrale Filamentinventare, Druckfarm-Verwaltung oder Smart-Home-Integrationen. Die modulare Architektur erleichtert zudem zukünftige Erweiterungen, beispielsweise zusätzliche Sensorik, alternative Benutzeroberflächen oder eine automatisierte Bestandsverwaltung.
+Die Offenlegung der Hard- und Software erlaubt es zudem, das System an individuelle Anforderungen anzupassen. Beispielsweise können alternative Sensoren integriert, zusätzliche Schnittstellen wie Home Assistant Bridges implementiert oder neue Visualisierungsfunktionen entwickelt werden. Auch mechanische Anpassungen lassen sich auf Basis der Konstruktionsdaten realisieren.
 
 #pagebreak()
 
 = Fazit und Ausblick
 
-Das im Rahmen dieses Projekts weiterentwickelte System _ClothoPus_ erfüllt die gesetzten Anforderungen.
+Das im Rahmen dieses Projekts weiterentwickelte System _ClothoPus_ erfüllt die in der Zielsetzung formulierten Anforderungen.
 Es wurde ein vollständig funktionsfähiges, dezentrales und skalierbares System zur automatisierten Filamentverwaltung realisiert.
 
 Gegenüber dem vorherigen Projektstand konnten zwei zentrale technische Schwachstellen behoben werden. Die zuvor durch GPIO-Pins begrenzte Skalierbarkeit wurde durch eine Netzwerkarchitektur mit ESP32-PoE-Stacks ersetzt. Jeder Stack arbeitet nun als eigenständiger Netzwerkteilnehmer und kann über einen PoE-fähigen Switch angebunden werden. Damit steigt die praktisch nutzbare Anzahl paralleler Stacks von zuvor fünf auf bis zu 253 Geräte in einem üblichen Subnetz. Durch angepasste Netzwerktopologien ist darüber hinaus eine nahezu unbegrenzte Erweiterung denkbar.
 
-Auch die Messmethodik wurde grundlegend verbessert. Die bisher verwendeten Wägezellen zeigten unter dauerhafter Belastung ein Kriechverhalten, wodurch die Messgenauigkeit langfristig abnahm. Durch den Wechsel auf eine encoderbasierte Verbrauchserfassung wird der Materialverbrauch nun aus der tatsächlich durchlaufenden Filamentlänge berechnet. In Kombination mit den auf dem NFC-Tag gespeicherten Materialdaten, insbesondere Dichte und Filamentdurchmesser, kann daraus das verbrauchte Gewicht berechnet werden.
+Auch die Messmethodik wurde grundlegend verbessert. Die bisher verwendeten Wägezellen zeigten unter dauerhafter Belastung ein Kriechverhalten, wodurch die Messgenauigkeit langfristig abnahm. Durch den Wechsel auf eine encoderbasierte Verbrauchserfassung wird der Materialverbrauch nun aus der tatsächlich durchlaufenden Filamentlänge berechnet. In Kombination mit den auf dem NFC-Tag gespeicherten Materialdaten (Dichte und Filamentdurchmesser), kann daraus das verbrauchte Gewicht berechnet werden.
 
-Die NFC-Funktionalität konnte erhalten bleiben. Der PN5180 wird weiterhin verwendet, wobei der bestehende Treiber auf MicroPython portiert wurde. Die bereits entwickelten Lese- und Schreibfunktionen blieben funktional unverändert.
+Die NFC-Funktionalität blieb erhalten. Der PN5180 wird weiterhin verwendet, wobei der bestehende Treiber auf MicroPython portiert wurde. Die bereits entwickelten Lese- und Schreibfunktionen blieben funktional unverändert.
 
 Ein weiterer wesentlicher Fortschritt liegt in der neuen Softwarearchitektur. Auf jedem ESP32 läuft eine Microdot-basierte REST-API, über die NFC-Blöcke gelesen und geschrieben, die Erreichbarkeit geprüft und der bisherige Verbrauch abgefragt werden kann. Dadurch ist _ClothoPus_ deutlich offener als zuvor. OctoPrint bleibt zunächst als Benutzeroberfläche bestehen, ist aber nicht mehr zwingend notwendig. Proprietäre Frontends, Webanwendungen oder Plattformen wie Home Assistant können dieselben Schnittstellen verwenden.
 

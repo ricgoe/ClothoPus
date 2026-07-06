@@ -2,15 +2,13 @@
 from __future__ import absolute_import
 from collections import defaultdict
 from pathlib import Path
-import subprocess
 import time
+import struct
 import octoprint.plugin
-from octoprint.events import Events
 import flask
 import httpx
 from .OPTag import PrintTagHandler
 import asyncio
-import math
 
 class ClothopusPlugin(
     octoprint.plugin.SettingsPlugin,
@@ -24,9 +22,6 @@ class ClothopusPlugin(
 
     def __init__(self):
         self.taghandlers = defaultdict(PrintTagHandler)
-
-    # def on_event(self, event, payload):
-    #     if event == Events.PRINT_DONE:
 
 
     def on_after_startup(self):
@@ -79,6 +74,22 @@ class ClothopusPlugin(
         handler.patch_bin(tag_data)
         return True
 
+    def _pack(self, records: list[tuple]):
+        packed = bytearray()
+        clip = slice(max(0, len(records)-20), None)
+        for day, weight in records[clip]:
+            packed.extend(int(day).to_bytes(2, "big"))
+            packed.extend(int(weight).to_bytes(2, "big"))
+        return bytes(packed)
+
+    def _unpack(self, packed_records: bytes):
+        records = []
+        for i in range(0, len(packed_records), 4):
+            day = int.from_bytes(packed_records[i:i+2], "big")
+            weight = int.from_bytes(packed_records[i+2:i+4], "big")
+            records.append((day, weight))
+        return records
+
     def on_api_command(self, command, data: dict):
         stacks = self._settings.get(["stacks"]) or {}
         if command == "fetch_filaments":
@@ -101,13 +112,13 @@ class ClothopusPlugin(
                         consumed_resp.raise_for_status()
                         clicks_consumed = consumed_resp.json()["consumed_weight"]
                         if clicks_consumed != 0:
-                            consumed = _info["data"]["aux"]["consumed_weight"]
+                            consumed = _info["data"]["aux"].get("consumed_weight", 0)
                             consumed += clicks_consumed
-                            weight = {"data": { "aux": {"consumed_weight": consumed}}}
-                            handler.current_record = raw
+                            patch = {"data": { "aux": {"general_purpose_range_user": "Clotho" ,"consumed_weight": consumed}}}
+                            # handler.current_record = raw # nur gott weiß
                             resp = httpx.post(
                                 f"http://{stacks[mac]}/blocks", params={"retries_per_block": 10, "diff_only": True, "with_weight": True},
-                                content=handler.patch_bin(weight)
+                                content=handler.patch_bin(patch)
                             )
                             resp.raise_for_status()
                     except Exception as e:

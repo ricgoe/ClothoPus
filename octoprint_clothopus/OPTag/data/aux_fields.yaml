@@ -31,3 +31,14 @@
   description:
     - Timestamp when the resin was last stirred.
     - Resins that have not been used for some time should be stirred before printing.
+
+- key: 65401
+  name: clotho_weight_history
+  type: bytes
+  max_length: 120
+  description:
+    - User-specific weight history used by ClothoPus.
+    - Contains up to 30 fixed-size records.
+    - Each record is 4 bytes.
+    - Bytes 0..1 are a big-endian uint16 Unix DAY timestamp.
+    - Bytes 2..4 are a big-endian uint16 weight value in grams.

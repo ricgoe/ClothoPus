@@ -331,8 +331,11 @@ Theoretisch könnte das Gewicht des letzten gespeicherten Messpunkts zugleich zu
 
 Die finale Speicherung der Verbrauchsdaten erfolgt daher nicht auf dem NFC-Tag, sondern innerhalb von OctoPrint. Nach dem erstmaligen Einlesen einer Filamentrolle wird ein Eintrag in einer Lookup-Tabelle erzeugt, in dem die Tag-UID abgelegt wird. Für jede neue Messung wird anschließend ein Tupel aus Zeitstempel und berechnetem Gewicht gespeichert.
 
-Die Prädiktion zukünftiger Materialbestände sowie die Abschätzung des Zeitpunkts, zu dem die Filamentrolle voraussichtlich leer sein wird, erfolgt auf Grundlage der zeitlich geordneten Messreihe. Dazu wird aus den vorhandenen Stützstellen zunächst eine stetige Näherungsfunktion abgeleitet, welche den beobachteten Gewichtsverlauf beschreibt @pchip. Anschließend wird numerisch der Zeitpunkt bestimmt, zu dem diese Funktion den Wert null erreicht @Brent1973. Dieser Schnittpunkt mit der Zeitachse entspricht dem prognostizierten Zeitpunkt der vollständigen Entleerung der Filamentrolle. Die Aktualisierung des Zeitpunktes findet mit jedem neuen Messwert, in der Regel nach jedem Druck, statt. 
-Dieser Zeitpunkt wird in der Benutzeroberfläche von OctoPrint dargestellt. 
+Die Prädiktion zukünftiger Materialbestände erfolgt auf Grundlage einer zeitlich geordneten Messreihe, in der jeder Messpunkt aus dem jeweiligen Tag und dem bis dahin kumuliert verbrauchten Material besteht. Aus den Differenzen aufeinanderfolgender Verbrauchswerte wird der tägliche Materialverbrauch berechnet. Tage ohne Verbrauch werden dabei mit einem Verbrauch von null berücksichtigt.
+
+Auf Basis dieser Tagesverbräuche wird ein Vorhersagemodell trainiert, das zusätzlich kalenderbasierte Merkmale wie Wochentag und Wochenende und Jahreszeiten einbezieht @hyndman_fpp3. Die Implementierung erfolgt mithilfe eines histogrammbasierten Gradient-Boosting-Regressors @hang2021gradientboostedbinaryhistogram @sklearn_hgbregressor.
+
+Der zukünftige Verbrauch wird tageweise vorhergesagt und zum bisherigen kumulierten Verbrauch addiert. Sobald der prognostizierte verbleibende Materialbestand erstmals null erreicht oder unterschreitet, gilt dieser Zeitpunkt als voraussichtliche vollständige Entleerung der Filamentrolle. Die Berechnung wird nach jedem neuen Messwert aktualisiert und in der Benutzeroberfläche von OctoPrint dargestellt.
 
 == Aktoren und Ausgänge
 

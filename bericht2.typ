@@ -1,4 +1,5 @@
 #set text(lang: "de")
+#set heading(numbering: "1.")
 #set par(leading: 1.3em)
 #set page(
   paper: "a4",
@@ -112,7 +113,7 @@ Aus der Kombination beider Begriffe entstand die Bezeichnung „ClothoPus“.
 
 == Motivation
 
-Im Bereich der privaten Nutzung von 3D-Druck-Techniken, insbesondere Fused Deposition Modelling (FDM) und Fused Layer Modelling (FLM), stellt Filament das zentrale Fertigungsmaterial dar  .  
+Im Bereich der privaten Nutzung von 3D-Druck-Techniken, insbesondere Fused Deposition Modelling (FDM) und Fused Layer Modelling (FLM), stellt Filament das zentrale Fertigungsmaterial dar.  
 Ein wiederkehrendes Problem sowohl in der eigenen praktischen Arbeit als auch innerhalb der Community ist die regelmäßige und umständliche Überprüfung des verfügbaren Filamentbestands @2ProblemeBestandCheck.
 
 Die Bestimmung der Restmenge erfordert typischerweise das Entnehmen der Filamentrolle aus dem Drucker, eine separate Gewichtsmessung sowie die manuelle Subtraktion des Eigengewichts der Spule. Anschließend muss das Filament erneut montiert und korrekt eingeführt werden @3GewichtGrundlage.
@@ -120,7 +121,7 @@ Insbesondere bei Druckvorgängen mit mehreren Materialwechseln oder bei der Nutz
 
 Im vorherigen Entwicklungsstand von _ClothoPus_ wurde dieses Problem durch ein System adressiert, das Filamentrollen über NFC-Tags identifiziert und den Materialbestand über Wägezellen erfasst. Die Messdaten wurden zentral verarbeitet und in OctoPrint dargestellt. Dadurch konnte bereits eine deutliche Reduktion manueller Kontrollschritte erreicht werden.
 
-Während der weiteren Entwicklung zeigte sich jedoch, dass die ursprüngliche Architektur in zwei wesentlichen Punkten eingeschränkt war. Zum einen begrenzte die zentrale Anbindung der einzelnen Filament-Stacks über proprietäre Anschlüsse an GPIO-Pins die maximale Anzahl parallel nutzbarer Stacks. Im vorherigen Aufbau konnten dadurch nur bis zu fünf Stacks gleichzeitig betrieben werden. Zum anderen erwies sich die Gewichtsmessung über dauerhaft belastete Wägezellen als problematisch, da die verwendeten HX711-basierten Messsysteme unter Dauerlast ein Kriechverhalten zeigten. Dies führte dazu, dass die Messwerte im Laufe der Zeit ungenauer wurden.
+Während der weiteren Entwicklung zeigte sich jedoch, dass die ursprüngliche Architektur in zwei wesentlichen Punkten eingeschränkt war. Zum einen begrenzte die zentrale Anbindung der einzelnen Filament-Stacks über proprietäre Anschlüsse an GPIO-Pins die maximale Anzahl parallel nutzbarer Stacks. Zum anderen erwies sich die Gewichtsmessung über dauerhaft belastete Wägezellen als problematisch, da die verwendeten Messsysteme unter Dauerlast ein Kriechverhalten zeigten. Dies führte dazu, dass die Messwerte im Laufe der Zeit ungenauer wurden.
 
 Vor diesem Hintergrund wurde _ClothoPus_ in der aktuellen Projektphase grundlegend weiterentwickelt.
 
@@ -128,7 +129,8 @@ Vor diesem Hintergrund wurde _ClothoPus_ in der aktuellen Projektphase grundlege
 
 Ziel des Projekts war die Weiterentwicklung von ClothoPus zu einem skalierbaren, dezentralen und netzwerkfähigen System zur automatisierten Filamentverwaltung.
 
-Im Fokus standen dabei drei zentrale Aspekte: die Aufhebung der bisherigen Begrenzung auf wenige Filament-Stacks, die Entwicklung eines alternativen Messprinzips zur Erfassung des Filamentverbrauchs sowie eine offenere Softwarearchitektur für zukünftige Erweiterungen und Integrationen.
+Ausgehend von den Einschränkungen des bisherigen Entwicklungsstands standen vier Anforderungen im Vordergrund: die Aufhebung der Begrenzung parallel nutzbarer Filament-Stacks durch eine dezentrale, netzwerkfähige Architektur, die Entwicklung eines alternativen Messprinzips ohne dauerhaft belastete Wägezellen, eine offenere und modularere Softwarearchitektur sowie die Implementierung datenbasierter Vorhersagen zukünftiger Filamentbestände.
+
 
 #pagebreak()
 
@@ -136,15 +138,18 @@ Im Fokus standen dabei drei zentrale Aspekte: die Aufhebung der bisherigen Begre
 
 Das Projekt wurde erneut in einen Hardware- und einen Softwareanteil gegliedert.
 
-Die Hardwareentwicklung umfasste den mechanischen und elektronischen Neuaufbau der Filament-Stacks. Jeder Stack wurde mit einem Olimex ESP32 PoE ausgestattet, der als dezentrale Steuereinheit dient. Zusätzlich wurde ein eigenentwickelter Aufnehmer mit zwei Zahnrädern konstruiert, über den das Filament direkt ein Encoder-Rad antreibt. Dadurch kann die durchlaufende Filamentlänge anhand der Encoder-Impulse bestimmt werden.
+Im Hardwareanteil wurden die bestehenden Filament-Stacks an die neue Architektur angepasst. Dabei konnten zentrale Elemente des vorherigen Entwicklungsstands weiterverwendet werden. Die Anpassungen betrafen insbesondere die Integration eines Olimex ESP32 PoE als lokale Steuereinheit sowie die Umsetzung eines neuen Messprinzips zur Erfassung der durchlaufenden Filamentlänge. Hierfür wurde ein Aufnehmer mit zwei Zahnrädern konstruiert, über den das Filament ein Encoder-Rad antreibt. Die zurückgelegte Filamentlänge kann dadurch anhand der erfassten Encoder-Impulse bestimmt werden.
 
-Die NFC-Hardware blieb gegenüber dem vorherigen Projektstand unverändert. Weiterhin kommt der PN5180 als NFC-Reader zum Einsatz. Die bereits im Vorjahr entwickelten Lese- und Schreibfunktionen wurden nicht funktional verändert. Stattdessen wurde der vorhandene Treiber auf MicroPython übertragen, um ihn direkt auf den ESP32-basierten Stacks ausführen zu können.
+Die NFC-Hardware blieb gegenüber dem vorherigen Projektstand unverändert. Weiterhin kommt der PN5180 als NFC-Reader zum Einsatz. Die bereits bestehenden Lese- und Schreibfunktionen wurden funktional beibehalten. Der vorhandene Treiber wurde jedoch auf MicroPython übertragen, damit er direkt auf den ESP32-basierten Stacks ausgeführt werden kann.
 
-Die Softwareentwicklung konzentrierte sich auf die Portierung und Dezentralisierung der bisherigen Funktionalität. Auf jedem ESP32 läuft eine Microdot-Anwendung, die eine Flask-ähnliche REST-API bereitstellt. Über diese Schnittstelle können NFC-Blöcke gelesen und geschrieben, die Erreichbarkeit eines Stacks geprüft sowie der bisher berechnete Materialverbrauch abgefragt werden.
+Die Softwareentwicklung konzentrierte sich auf die Portierung und Dezentralisierung der bisherigen Funktionalität. Auf jedem ESP32 läuft eine Microdot-Anwendung, die eine Flask-ähnliche REST-API bereitstellt @microdot_doc. Über diese Schnittstelle können NFC-Blöcke gelesen und geschrieben, die Erreichbarkeit eines Stacks geprüft sowie der bisher berechnete Materialverbrauch abgefragt werden.
 
 Durch diese Architektur wurde das System von einer zentral gesteuerten Lösung zu einem verteilten Netzwerk aus eigenständigen Filament-Stacks weiterentwickelt. 
 
-Die Umsetzung erfolgte iterativ: Zunächst wurden einzelne Hardware- und Softwarekomponenten getrennt getestet, anschließend wurden Encoder-Messung, NFC-Kommunikation und REST-Schnittstelle zu einem voll funktionsfähigen Gesamtsystem integriert.
+Ergänzend wurde eine Vorhersagefunktion zur Abschätzung der verbleibenden Nutzungsdauer des Filaments implementiert. Grundlage hierfür bilden die zuletzt erfassten Verbrauchsdaten, aus denen der aktuelle Verbrauchstrend abgeleitet wird. Auf dieser Basis kann näherungsweise prognostiziert werden, wie lange das jeweilige Filament voraussichtlich noch ausreicht.
+
+Die Umsetzung erfolgte iterativ: Zunächst wurden einzelne Hardware- und Softwarekomponenten getrennt getestet und anschließend zu einem funktionsfähigen Gesamtsystem integriert.
+
 
 #pagebreak()
 
@@ -154,35 +159,34 @@ Die Umsetzung erfolgte iterativ: Zunächst wurden einzelne Hardware- und Softwar
 
 Zur strukturierten Planung und Durchführung des Projekts wurde eine Work Breakdown Structure (WBS) verwendet, welche das Gesamtvorhaben in klar definierte Arbeitspakete unterteilte.
 
-Auf oberster Ebene wurde das Projekt in die Bereiche Analyse, Hardwareentwicklung, Softwareentwicklung, Integration und Test gegliedert. Die Analysephase diente der Bewertung des vorherigen Systemstands sowie der Identifikation technischer Schwachstellen. Hierbei wurden insbesondere die begrenzte Skalierbarkeit der GPIO-basierten Architektur und die langfristige Ungenauigkeit der Wägezellen als zentrale Problemstellen identifiziert.
+Auf oberster Ebene wurde das Projekt in die Bereiche Analyse, Hardware, Software, Integration und Test gegliedert. Die Analyse umfasste die Bewertung des vorherigen Systemstands sowie die Ableitung der zentralen Anforderungen für die Weiterentwicklung. Dabei wurden insbesondere die eingeschränkte Skalierbarkeit der GPIO-basierten Architektur und die langfristige Messungenauigkeit der Wägezellen als relevante Schwachstellen identifiziert.
 
-Im Bereich der Hardwareentwicklung umfassten die Arbeitspakete die Integration des Olimex ESP32 PoE in jeden Stack, die Entwicklung des mechanischen Encoder-Aufnehmers, die Anpassung der Strom- und Datenversorgung über Power over Ethernet sowie die Integration des weiterhin verwendeten PN5180-NFC-Readers.
+Der Bereich Hardware beinhaltete die Anpassung der bestehenden Filament-Stacks an die dezentrale Systemarchitektur. Dazu zählten insbesondere die Integration des Olimex ESP32 PoE, die mechanische Umsetzung des Encoder-basierten Messprinzips sowie notwendige Anpassungen an Stromversorgung, Verkabelung und Bauraum innerhalb der Stacks.
 
-Die Softwareentwicklung gliederte sich in die Portierung des PN5180-Treibers nach MicroPython, die Implementierung der Encoder-Auswertung, die Berechnung des Filamentverbrauchs, die Entwicklung der Microdot-REST-API sowie die Anbindung an die bestehende OctoPrint-Integration.
+Im Bereich Software wurden die zentralen Entwicklungsaufgaben in mehrere Arbeitspakete gegliedert. Dazu gehörten die Portierung des PN5180-Treibers nach MicroPython, die Implementierung der Encoder-Auswertung einschließlich der Berechnung des Filamentverbrauchs, die Entwicklung der Microdot-basierten REST-API, die Anbindung an die bestehende OctoPrint-Integration sowie die Implementierung der Vorhersagefunktion für die verbleibenden Filamentnutzungsdauer.
 
-Als wesentliche Meilensteine wurden die erfolgreiche Inbetriebnahme eines ESP32-PoE-Stacks, das zuverlässige Auslesen eines NFC-Tags, die stabile Erfassung von Encoder-Impulsen, die Bereitstellung der REST-Endpunkte und schließlich die funktionsfähige Gesamtdemonstration definiert.
+Die Bereiche Integration und Test fassten die schrittweise Zusammenführung der einzelnen Komponenten sowie deren Überprüfung im Gesamtsystem. Als wesentliche Meilensteine wurden die Inbetriebnahme eines ESP32-PoE-Stacks, das erfolgreiche Auslesen und Beschreiben eines NFC-Tags, die Erfassung von Encoder-Impulsen, die Bereitstellung der REST-Endpunkte, die Berechnung und Vorhersage des Filamentverbrauchs sowie die abschließende Gesamtdemonstration definiert.
 
 == Organisational Breakdown Structure
 
-Die Organisationsstruktur des Projekts war als kleines, gleichberechtigtes Teammodell ausgelegt.
+Die Organisationsstruktur des Projekts war als kleines, gleichberechtigtes Teammodell ausgelegt. Die Umsetzung erfolgte durch Richard und Jannis, wobei Richard schwerpunktmäßig die Hardwareentwicklung und Jannis den Softwareanteil übernahm.
 
-Im Unterschied zum vorherigen Projekt war Emil in der Weiterentwicklung nicht beteiligt. Die Umsetzung erfolgte durch Richard und Jannis. Richard übernahm schwerpunktmäßig die Hardwareentwicklung und Jannis den Softwareanteil.
+Aufgrund der geringen Teamgröße konnten Abstimmungen direkt und effizient erfolgen. Strategische und technische Entscheidungen wurden gemeinsam getroffen. Die klare Aufteilung in Hardware- und Softwareverantwortung ermöglichte paralleles Arbeiten an voneinander abhängigen Komponenten. So konnten softwareseitig beispielsweise Dummy-Treiber eingesetzt werden, die erwartete Rückgabewerte der Hardware simulierten und dadurch eine frühzeitige Entwicklung sowie Tests unabhängig vom finalen Hardwarestand ermöglichten.
 
-Durch die kleine Teamgröße konnten Abstimmungen direkt und effizient erfolgen. Strategische und technische Entscheidungen wurden gemeinsam getroffen. Die klare Aufteilung in Hardware- und Softwareverantwortung ermöglichte paralleles Arbeiten zum Beispiel mit "Dummy Treibern", die erwartete Hardwarerückgabewerte simulierten. Regelmäßige Integrationsschritte stellten sicher, dass beide Entwicklungsbereiche kontinuierlich zusammengeführt werden konnten.
+Regelmäßige Integrationsschritte stellten sicher, dass beide Entwicklungsbereiche kontinuierlich zusammengeführt werden konnten.
 
 == Projektplan
 
-Das Projekt begann im Oktober 2025 und wurde im Januar 2026 abgeschlossen.
+Das Projekt begann im April 2026 und wurde im Juli 2026 abgeschlossen.
 
 Die zeitliche Planung orientierte sich an den definierten Hauptphasen der WBS.  
 
 Während der Umsetzung traten mehrere technische Herausforderungen auf, die Einfluss auf den Projektverlauf hatten.  
-Zentrale Problemstellen waren hardwareseitig die Planung und Iterationsstufen des Kailh Encoder.
+Zentrale Problemstellen waren hardwareseitig die Planung und Integration des Encoders zur Längenmessung.
 Kernherausforderung der Softwareentwicklung war die inkonsitente Implementierung von Basismodulen zwischen upstream Python und Micropython.
-
+Zudem konnte die geplante Speicherung der Verbrauchsdaten direkt auf dem NFC-Tag aufgrund begrenzter Speicherkapazitäten in den vorgesehenen Speicherbereichen nicht umgesetzt werden. Die finale alternative Umsetzung der Speicherung und Verarbeitung der Verbrauchsdaten wird in @DataAnalytics beschrieben.
 Diese Herausforderungen erforderten zusätzliche Entwicklungsarbeit, konnten jedoch innerhalb des vorgesehenen Projektzeitraums gelöst werden.
 
-Der funktionale Projektumfang blieb stabil. 
 Die strategische Entscheidung, zunächst eine stabile Integration mit OctoPrint zu realisieren, ermöglichte eine klar abgegrenzte Demonstrationsfähigkeit des Systems.
 
 == Vorgehensmodell in der Entwicklung
@@ -193,7 +197,7 @@ Einzelne Funktionen wurden zunächst separat umgesetzt und getestet. Dazu gehör
 
 Die größte technische Herausforderung bestand in der Ablösung der bisherigen zentralen Architektur. Da jeder Stack nun eigenständig arbeitet, mussten Stromversorgung, Datenkommunikation und Sensorverarbeitung vollständig dezentralisiert werden. Gleichzeitig musste sichergestellt werden, dass die neue Architektur weiterhin mit der bestehenden OctoPrint-Integration kompatibel bleibt.
 
-Positiv hervorzuheben ist bei dieser Weiterentwicklung die agilität aufgrund der kleinen Teamgröße. Allerdings fällt pro Teammitglied mehr arbeit an. Hohe auslastung.
+Die geringe Teamgröße wirkte sich positiv auf die Agilität des Projekts aus. Abstimmungen konnten kurzfristig erfolgen, Entscheidungen wurden schnell getroffen und Anpassungen ließen sich ohne aufwendige Kommunikationswege umsetzen. Gleichzeitig führte die kleine Teamgröße jedoch zu einer hohen individuellen Auslastung, da sämtliche Aufgaben der Planung, Entwicklung, Integration, Dokumentation und Fehlerbehebung auf zwei Personen verteilt waren. Dadurch entstand ein erhöhter Koordinations- und Arbeitsaufwand pro Teammitglied, insbesondere in Phasen, in denen Hardware- und Softwarearbeiten parallel vorangetrieben werden mussten.
 
 #pagebreak()
 
@@ -202,7 +206,7 @@ Positiv hervorzuheben ist bei dieser Weiterentwicklung die agilität aufgrund de
 == Produkt und Vernetzung
 
 _ClothoPus_ ist als modulares, vernetztes Smart-System zur automatisierten Filamentverwaltung im Bereich des privaten und semiprofessionellen 3D-Drucks konzipiert.  
-Das Produkt dient der kontinuierlichen Identifikation und *Längenerfassung* mehrerer Filamentrollen und stellt diese Informationen externen Druckmanagementsystemen zur Verfügung.
+Das Produkt dient der kontinuierlichen Identifikation, Längenerfassung und Bestandsvorhersage mehrerer Filamentrollen und stellt diese Informationen externen Druckmanagementsystemen zur Verfügung.
 
 #figure(
  image("assets/image-5.png"), caption: [Aufbau des Gesamtsystems.]
@@ -252,7 +256,8 @@ Der verwendete NFC-Chip bleibt damit gegenüber dem vorherigen Projektstand unve
 #pagebreak()
 Die bereits entwickelten Lese- und Schreibfunktionen wurden nicht verändert. Die wesentliche Weiterentwicklung bestand stattdessen darin, den vorhandenen Treiber auf MicroPython umzuschreiben. Dadurch kann die NFC-Kommunikation direkt auf dem ESP32 ausgeführt werden.
 
-Über den NFC-Tag werden relevante Filamentdaten ausgelesen. Dazu gehören insbesondere Materialparameter wie Dichte und Filamentdurchmesser. Diese Informationen werden nicht nur zur Identifikation des Filaments genutzt, sondern auch direkt in die Berechnung des bisher verbrauchten Gewichts einbezogen.
+Über den NFC-Tag werden relevante Filamentdaten wie Materialtyp, Farbe, Dichte und Filamentdurchmesser ausgelesen. Während Materialtyp und Farbe vor allem der Identifikation und Darstellung dienen, werden Dichte und Durchmesser für die Berechnung des bisher verbrauchten Filamentgewichts verwendet.
+
 
 === Verbrauchsmessung über Encoder
 
@@ -294,7 +299,7 @@ Die implementierten Endpunkte sind:
   )
 )
 
-Durch diese Endpunkte entsteht eine klare, offene und leicht integrierbare Schnittstelle. Externe Systeme müssen nicht wissen, wie NFC-Kommunikation oder Encoder-Auswertung intern funktionieren. Sie können stattdessen über HTTP auf die abstrahierten Funktionen des jeweiligen Stacks zugreifen.
+Durch diese Endpunkte entsteht eine klare, offene und leicht integrierbare Schnittstelle. Externe Systeme müssen keine Kenntnisse über die interne Umsetzung der NFC-Kommunikation oder Encoder-Auswertung besitzen. Stattdessen können sie über HTTP auf die abstrahierten Funktionen des jeweiligen Stacks zugreifen.
 
 === Connectivity
 
@@ -308,8 +313,26 @@ Die Kommunikation zwischen Frontend und Stack erfolgt über standardisierte HTTP
 Die Kommunikation mit dem PN5180-NFC-Reader erfolgt über eine SPI-Schnittstelle, über die Steuer- und Nutzdaten ausgetauscht werden.
 Der Kailh-Encoder erzeugt bei Drehbewegung steigende Flanken, die mithilfe eines Interrupt-Handlers des ESP32 erfasst werden. Dabei wird ein interner Zähler hochgezählt, wodurch, wie in @länge beschrieben, die abgespulte Materiallänge berechnet werden kann.
 
-=== Data Analytics
-[DAS MACHT RICHARD DAMIT HABE ICH NIX ZU TUN]
+=== Data Analytics <DataAnalytics>
+
+Die bisherige reine Anzeige des Filamentbestands wird in dieser Iterationsstufe um eine Vorhersage zukünftiger Materialbestände erweitert. Grundlage hierfür ist eine Zeitreihe aus Zeitstempeln und den jeweils zugehörigen Materialbeständen.
+
+In der Planungsphase des Projekts war zunächst vorgesehen, diese Verlaufsdaten direkt auf dem NFC-Tag zu speichern. Der OpenPrintTag-Standard reserviert für dynamische Daten einen gesonderten Speicherbereich, die sogenannte _Auxiliary Region_. Die Aufteilung des Speicherbereichs auf dem Tag ist in @optspeicher dargestellt. In diesem Bereich werden auch die zuvor gemessenen und nun berechneten Gewichtsdaten gespeichert. Die Größe dieses Speicherbereichs wird bei der Initialisierung des Tags festgelegt, welche im Regelfall durch den Hersteller des Filaments erfolgt. Laut @6OpenPrintTag ist vorgesehen, dass dieser Bereich mindestens 16 Byte groß ist. Empfohlen wird eine Größe von 32 Byte. Tests während der Entwicklung zeigten, dass die meisten Hersteller diese empfohlene Größe verwenden.
+
+#figure(
+image("assets/speicherregionen.png", height: 70pt), caption: [Aufteilung des Speicherbereiches auf einem OpenPrintTag @6OpenPrintTag]
+)<optspeicher>
+
+Die Speicherung eines Zeitstempels einschließlich des zugehörigen Gewichts belegt 4 Byte. Bei vollständiger Nutzung der Auxiliary Region könnten somit maximal acht Messpunkte gespeichert werden. Da in diesem Bereich jedoch zusätzlich die aktuellen Gewichtsdaten abgelegt werden, reduziert sich die verfügbare Kapazität auf sieben Zeit-Gewichts-Paare.
+
+Eine nachträgliche Vergrößerung des Speicherbereichs ist ohne Reinitialisierung des NFC-Tags nicht möglich. Dafür müssten die vorhandenen Daten zunächst ausgelesen und vom Tag gelöscht werden. Anschließend müsste der Tag mit einer vergrößerten Auxiliary Region neu initialisiert und erneut mit den bisherigen Daten sowie den zusätzlichen Zeit-Gewichts-Werten beschrieben werden. Dieser Lese- und Schreibvorgang benötigt etwa 10 bis 20 Sekunden. Störungen oder ein Entfernen des Tags während dieses Vorgangs könnten dazu führen, dass der Tag nicht vollständig beschrieben wird und dadurch korrupt wird.
+
+Theoretisch könnte das Gewicht des letzten gespeicherten Messpunkts zugleich zur Anzeige des aktuellen Filamentbestands verwendet werden, um die Speicherausnutzung zu optimieren. Andere Systeme, beispielsweise die Prusa App @prusa_app, verwenden für die Darstellung des aktuellen Filamentbestands jedoch den unter dem Keyword _consumed_weight_ gespeicherten Wert. Zudem würde diese Speicheroptimierung die Anzahl speicherbarer Messpunkte nur geringfügig erhöhen und damit keine ausreichend belastbare Datengrundlage für die Vorhersage schaffen.
+
+Die finale Speicherung der Verbrauchsdaten erfolgt daher nicht auf dem NFC-Tag, sondern innerhalb von OctoPrint. Nach dem erstmaligen Einlesen einer Filamentrolle wird ein Eintrag in einer Lookup-Tabelle erzeugt, in dem die Tag-ID abgelegt wird. Für jede neue Messung wird anschließend ein Tupel aus Zeitstempel und berechnetem Gewicht gespeichert.
+
+Die Prädiktion zukünftiger Materialbestände sowie die Abschätzung des Zeitpunkts, zu dem die Filamentrolle voraussichtlich leer sein wird, erfolgt auf Grundlage der zeitlich geordneten Messreihe. Dazu wird aus den vorhandenen Stützstellen zunächst eine stetige Näherungsfunktion abgeleitet, welche den beobachteten Gewichtsverlauf beschreibt @pchip. Anschließend wird numerisch der Zeitpunkt bestimmt, zu dem diese Funktion den Wert null erreicht @Brent1973. Dieser Schnittpunkt mit der Zeitachse entspricht dem prognostizierten Zeitpunkt der vollständigen Entleerung der Filamentrolle. Die Aktualisierung des Zeitpunktes findet mit jedem neuen Messwert, in der Regel nach jedem Druck, statt. 
+Dieser Zeitpunkt wird in der Benutzeroberfläche von OctoPrint dargestellt. 
 
 == Aktoren und Ausgänge
 
@@ -347,7 +370,9 @@ Ein weiterer wesentlicher Fortschritt liegt in der neuen Softwarearchitektur. Au
 
 Damit entwickelt sich _ClothoPus_ von einem lokal begrenzten, zentral gesteuerten Messsystem zu einer skalierbaren, verteilten Smart-Inventory-Lösung. Die aktuelle Version konnte vollständig funktionsfähig präsentiert werden und bildet eine stabile Grundlage für zukünftige Erweiterungen.
 
-Zukünftige Ausbaustufen könnten insbesondere ein umfassendes digitales Filamentinventar, eine automatische Erkennung neu angeschlossener Stacks, eine zentrale Verwaltung mehrerer Drucker oder eine tiefere Integration in Smart-Home- und Druckfarm-Systeme umfassen. Durch die offene REST-Architektur sind diese Erweiterungen ohne grundlegende Änderung der Stack-Hardware realisierbar.
+Zukünftige Ausbaustufen könnten eine automatische Erkennung und Einrichtung neu angeschlossener Stacks, eine zentrale Verwaltung mehrerer Drucker oder eine tiefere Integration in Smart-Home- und Druckfarm-Systeme umfassen. Durch die offene REST-Architektur sind diese Erweiterungen ohne grundlegende Änderung der Stack-Hardware realisierbar.
+Auch die implementierte Vorhersagefunktion bietet weiteres Erweiterungspotenzial. Künftig könnten nicht nur die Verbrauchsdaten einzelner Rollen, sondern auch rollenübergreifende historische Daten ausgewertet werden. Eine Differenzierung nach Materialtyp oder nach Kombinationen aus Materialtyp und Farbe würde es ermöglichen, typische Nutzungsmuster einzelner Filamentarten zu berücksichtigen. Dadurch könnten die Verbrauchsmodelle verfeinert und die Vorhersagen zukünftiger Filamentbestände weiter verbessert werden.
+
 
 #pagebreak()
 #show link: set text(hyphenate: true)

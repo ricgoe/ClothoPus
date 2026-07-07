@@ -7,8 +7,9 @@ import struct
 import octoprint.plugin
 import flask
 import httpx
-from .OPTag import PrintTagHandler
 import asyncio
+from .OPTag import PrintTagHandler
+from .predictor import predict_runout_from_tuples
 
 class ClothopusPlugin(
     octoprint.plugin.SettingsPlugin,
@@ -37,6 +38,7 @@ class ClothopusPlugin(
     def get_settings_defaults(self):
         return {
             "stacks": {},
+            "seen_filaments": {},
         }
 
     def get_template_configs(self):
@@ -74,21 +76,22 @@ class ClothopusPlugin(
         handler.patch_bin(tag_data)
         return True
 
-    def _pack(self, records: list[tuple]):
-        packed = bytearray()
-        clip = slice(max(0, len(records)-20), None)
-        for day, weight in records[clip]:
-            packed.extend(int(day).to_bytes(2, "big"))
-            packed.extend(int(weight).to_bytes(2, "big"))
-        return bytes(packed)
+    def add_timestamp(self, uid, weight):
+        filaments = self._settings.get(["seen_filaments"]) or {}
+        filament:list = filaments.get(uid, [])
+        if len(filament) == 0:
+            day = 0
+        else:
+            day = filament[-1][0]
+        today = int(time.time()//86400)
+        if day < today:
+            filament.append((today, weight))
+        filaments[uid] = filament
+        self._settings.set(["seen_filaments"], filaments)
+        self._settings.save()
+        return filament
 
-    def _unpack(self, packed_records: bytes):
-        records = []
-        for i in range(0, len(packed_records), 4):
-            day = int.from_bytes(packed_records[i:i+2], "big")
-            weight = int.from_bytes(packed_records[i+2:i+4], "big")
-            records.append((day, weight))
-        return records
+
 
     def on_api_command(self, command, data: dict):
         stacks = self._settings.get(["stacks"]) or {}
@@ -109,12 +112,14 @@ class ClothopusPlugin(
                             "filament_diameter": _info["data"]["main"].get("filament_diameter", 1.75),
                             "density": _info["data"]["main"]["density"]
                         })
+                        sysinfo = httpx.get(f"http://{stacks[mac]}/sysinfo")
+                        sysinfo.raise_for_status()
                         consumed_resp.raise_for_status()
                         clicks_consumed = consumed_resp.json()["consumed_weight"]
+                        consumed = _info["data"]["aux"].get("consumed_weight", 0)
                         if clicks_consumed != 0:
-                            consumed = _info["data"]["aux"].get("consumed_weight", 0)
                             consumed += clicks_consumed
-                            patch = {"data": { "aux": {"general_purpose_range_user": "Clotho" ,"consumed_weight": consumed}}}
+                            patch = {"data": { "aux": {"consumed_weight": consumed}}}
                             # handler.current_record = raw # nur gott weiß
                             resp = httpx.post(
                                 f"http://{stacks[mac]}/blocks", params={"retries_per_block": 10, "diff_only": True, "with_weight": True},
@@ -123,7 +128,12 @@ class ClothopusPlugin(
                             resp.raise_for_status()
                     except Exception as e:
                         return flask.jsonify(dict(success=False, error=f"Corrupt tag: {e} @ {mac}"))
-                    filaments.append(handler.bin_to_dict())
+                    try:
+                        pred = predict_runout_from_tuples(self.add_timestamp(sysinfo.json()["uid"], consumed), _info["data"]["main"]["nominal_netto_full_weight"])
+                        runout_date = pred["runout_date"].strftime("%d.%m.%Y")
+                    except Exception as e:
+                        runout_date = "N/A"
+                    filaments.append(handler.bin_to_dict()|{"runout_date": runout_date})
             return flask.jsonify(dict(success=True, rows=filaments, empty=empty))
 
         if command == "init_empty_nfc":

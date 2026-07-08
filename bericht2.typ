@@ -263,6 +263,10 @@ Die bereits entwickelten Lese- und Schreibfunktionen wurden nicht verändert. Di
 
 Im neuen System wird der Materialverbrauch nicht mehr durch eine direkte Gewichtsmessung bestimmt, sondern aus der durchlaufenden Filamentlänge berechnet. Hierfür wurde ein eigener mechanischer Aufnehmer mit zwei Zahnrädern entwickelt. Das Filament treibt den Aufnehmer direkt an, wodurch die Bewegung auf ein Odometer-Rad übertragen wird. Die Drehbewegung wird durch einen Encoder erfasst.
 
+#figure(
+ image("assets/encoder.png", height: 220pt), caption: [Entwickelter Encoder.]
+)<encoder>
+
 Aus der Anzahl der Encoder-Impulse wird zunächst die zurückgelegte Filamentlänge berechnet. Der verwendete Encoder hat eine Auflösung von 24 Schritten pro Umdrehung @kailh_spreadsheet.
 Anschließend wird über den Filamentdurchmesser die Querschnittsfläche bestimmt. Zusammen mit der Dichte des Materials ergibt sich daraus das verbrauchte Gewicht.
 
